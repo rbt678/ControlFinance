@@ -76,15 +76,20 @@ export default function FileUploader() {
                 )}
             </div>
 
-            {!isCollapsed && (
-                <button
-                    className="btn-folder"
-                    onClick={handleLoadFolder}
-                    disabled={loadingFolder || state.isLoading}
-                >
-                    <svg viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" /></svg>
-                    {loadingFolder ? 'Carregando...' : 'Ler pasta do projeto'}
-                </button>
+            {process.env.NODE_ENV === 'development' && !isCollapsed && (
+                <div className="btn-folder-wrapper">
+                    <button
+                        className="btn-folder"
+                        onClick={handleLoadFolder}
+                        disabled={loadingFolder || state.isLoading}
+                    >
+                        <svg viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" /></svg>
+                        {loadingFolder ? 'Carregando...' : 'Ler pasta do projeto'}
+                    </button>
+                    <p className="btn-folder-explanation">
+                        Esta opção carrega automaticamente arquivos OFX da pasta <code>/ofx-data</code> do projeto. Útil para testes rápidos em ambiente de desenvolvimento.
+                    </p>
+                </div>
             )}
 
             {hasFiles && (
