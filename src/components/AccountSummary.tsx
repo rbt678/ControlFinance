@@ -33,74 +33,82 @@ export default function AccountSummary() {
         {
             label: 'Receitas',
             value: formatCurrency(totalIncome),
-            icon: '📈',
+            icon: <svg viewBox="0 0 24 24"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18" /><polyline points="17 6 23 6 23 12" /></svg>,
             color: 'var(--color-success)',
             sub: `${filteredTransactions.filter(t => t.type === 'CREDIT').length} entradas`,
         },
         {
             label: 'Despesas',
             value: formatCurrency(totalExpense),
-            icon: '📉',
-            color: 'var(--color-danger)',
+            icon: <svg viewBox="0 0 24 24"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6" /><polyline points="17 18 23 18 23 12" /></svg>,
+            color: 'var(--color-text)',
             sub: `${filteredTransactions.filter(t => t.type === 'DEBIT').length} saídas`,
         },
         {
             label: 'Balanço',
             value: formatCurrency(balance),
-            icon: balance >= 0 ? '✅' : '⚠️',
+            icon: <svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23" /><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" /></svg>,
             color: balance >= 0 ? 'var(--color-success)' : 'var(--color-danger)',
-            sub: balance >= 0 ? 'Positivo' : 'Negativo',
+            sub: balance >= 0 ? 'STATUS: POSITIVO' : 'STATUS: NEGATIVO',
         },
         {
             label: 'Gasto Médio/Dia',
             value: formatCurrency(avgDailyExpense),
-            icon: '📅',
+            icon: <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" /></svg>,
             color: 'var(--color-accent)',
-            sub: `em ${new Set(filteredTransactions.filter(t => t.type === 'DEBIT').map(t => t.date)).size} dias`,
+            sub: `em ${new Set(filteredTransactions.filter(t => t.type === 'DEBIT').map(t => t.date)).size} dias ativos`,
         },
         {
             label: 'Maior Despesa',
             value: formatCurrency(Math.abs(biggestExpense.amount)),
-            icon: '🔥',
+            icon: <svg viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" /><line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" /></svg>,
             color: 'var(--color-warning)',
-            sub: biggestExpense.memo.substring(0, 30),
+            sub: biggestExpense.memo.substring(0, 25),
         },
         {
             label: 'Total Transações',
             value: filteredTransactions.length.toString(),
-            icon: '🔢',
+            icon: <svg viewBox="0 0 24 24"><line x1="4" y1="9" x2="20" y2="9" /><line x1="4" y1="15" x2="20" y2="15" /><line x1="10" y1="3" x2="8" y2="21" /><line x1="16" y1="3" x2="14" y2="21" /></svg>,
             color: 'var(--color-info)',
-            sub: `${state.parsedFiles.length} arquivo(s)`,
+            sub: `${state.parsedFiles.length} ARQUIVOS OFX`,
         },
     ];
 
     return (
         <div className="summary-grid">
             {cards.map((card, i) => (
-                <div key={i} className="summary-card" style={{ '--card-accent': card.color } as React.CSSProperties}>
+                <div key={i} className={`summary-card fade-in stagger-${(i % 4) + 1}`} style={{ '--card-accent': card.color } as React.CSSProperties}>
                     <div className="summary-card-header">
-                        <span className="summary-card-icon">{card.icon}</span>
                         <span className="summary-card-label">{card.label}</span>
+                        <span className="summary-card-icon">{card.icon}</span>
                     </div>
-                    <div className="summary-card-value">{card.value}</div>
-                    <div className="summary-card-sub">{card.sub}</div>
+                    <div className="summary-card-value" style={{ color: card.color }}>{card.value}</div>
+                    <div className="summary-card-sub">
+                        {card.sub.toUpperCase()}
+                    </div>
                 </div>
             ))}
 
             {/* Per-account saldo cards */}
-            {state.parsedFiles.map(f => (
-                <div key={f.fileName} className="summary-card account-card">
+            {state.parsedFiles.map((f, i) => (
+                <div key={f.fileName} className={`summary-card fade-in stagger-${((i + 6) % 4) + 1}`} style={{ '--card-accent': f.ledgerBalance.amount >= 0 ? 'var(--color-success)' : 'var(--color-danger)' } as React.CSSProperties}>
                     <div className="summary-card-header">
-                        <span className="summary-card-icon">{f.account.acctType === 'CREDITCARD' ? '💳' : '🏦'}</span>
                         <span className="summary-card-label">
-                            {f.account.acctType === 'CREDITCARD' ? 'Cartão de Crédito' : 'Conta Corrente'}
+                            {f.account.acctType === 'CREDITCARD' ? 'CARTÃO DE CRÉDITO' : 'CONTA CORRENTE'}
+                        </span>
+                        <span className="summary-card-icon">
+                            {f.account.acctType === 'CREDITCARD'
+                                ? <svg viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2" ry="2" /><line x1="1" y1="10" x2="23" y2="10" /></svg>
+                                : <svg viewBox="0 0 24 24"><line x1="3" y1="21" x2="21" y2="21" /><line x1="3" y1="10" x2="21" y2="10" /><path d="M5 6l7-3 7 3" /><line x1="4" y1="10" x2="4" y2="21" /><line x1="20" y1="10" x2="20" y2="21" /><line x1="8" y1="14" x2="8" y2="17" /><line x1="12" y1="14" x2="12" y2="17" /><line x1="16" y1="14" x2="16" y2="17" /></svg>
+                            }
                         </span>
                     </div>
-                    <div className="summary-card-value" style={{ color: f.ledgerBalance.amount >= 0 ? 'var(--color-success)' : 'var(--color-danger)' }}>
+                    <div className="summary-card-value">
                         {formatCurrency(f.ledgerBalance.amount)}
                     </div>
-                    <div className="summary-card-sub">
-                        Saldo em {f.ledgerBalance.asOfDate} · {f.account.org || 'Banco'}
+                    <div className="summary-card-sub" style={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
+                        <span>REF: {f.ledgerBalance.asOfDate.substring(0, 10).split('-').reverse().join('/')}</span>
+                        <span>{f.account.org || 'BANCO'}</span>
                     </div>
                 </div>
             ))}

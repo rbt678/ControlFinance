@@ -46,7 +46,7 @@ export default function TimelineChart() {
         val.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
     return (
-        <div className="chart-card">
+        <div className="chart-card fade-in stagger-4">
             <div className="chart-header">
                 <h3 className="chart-title">Gastos ao Longo do Tempo</h3>
                 <div className="chart-controls">
@@ -76,10 +76,10 @@ export default function TimelineChart() {
                             <YAxis tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }} />
                             <Tooltip
                                 formatter={(value) => formatCurrency(Number(value))}
-                                contentStyle={{ background: 'var(--color-card)', border: '1px solid var(--color-border)', borderRadius: '8px', color: 'var(--color-text)' }}
+                                contentStyle={{ background: 'var(--color-card)', border: '1px solid var(--color-border)', borderRadius: '2px', color: 'var(--color-text)' }}
                                 labelStyle={{ color: 'var(--color-text-secondary)' }}
                             />
-                            <Bar dataKey="total" fill="var(--color-accent)" radius={[4, 4, 0, 0]} animationDuration={800} />
+                            <Bar dataKey="total" fill="var(--color-accent)" radius={[2, 2, 0, 0]} animationDuration={800} />
                         </BarChart>
                     ) : (
                         <LineChart data={data}>
@@ -88,7 +88,7 @@ export default function TimelineChart() {
                             <YAxis tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }} />
                             <Tooltip
                                 formatter={(value) => formatCurrency(Number(value))}
-                                contentStyle={{ background: 'var(--color-card)', border: '1px solid var(--color-border)', borderRadius: '8px', color: 'var(--color-text)' }}
+                                contentStyle={{ background: 'var(--color-card)', border: '1px solid var(--color-border)', borderRadius: '2px', color: 'var(--color-text)' }}
                             />
                             <Line type="monotone" dataKey="total" stroke="var(--color-accent)" strokeWidth={2} dot={{ fill: 'var(--color-accent)', r: 4 }} animationDuration={800} />
                         </LineChart>

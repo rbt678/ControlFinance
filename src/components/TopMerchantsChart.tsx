@@ -1,18 +1,17 @@
 'use client';
 
 import { useMemo } from 'react';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { useFinance } from '@/lib/store';
 
 export default function TopMerchantsChart() {
     const { filteredTransactions } = useFinance();
 
     const data = useMemo(() => {
-        const expenses = filteredTransactions.filter(t => t.type === 'DEBIT');
+        const expenses = filteredTransactions.filter((t) => t.type === 'DEBIT');
         const byMerchant = new Map<string, { total: number; count: number }>();
+        let maxTotal = 0;
 
         for (const t of expenses) {
-            // Normalize merchant name (take first meaningful part)
             let name = t.memo.split(' - ')[0].trim();
             if (name.length > 25) name = name.substring(0, 25) + '…';
 
@@ -22,44 +21,48 @@ export default function TopMerchantsChart() {
             byMerchant.set(name, entry);
         }
 
-        return Array.from(byMerchant.entries())
-            .map(([name, vals]) => ({
-                name,
-                total: Math.round(vals.total * 100) / 100,
-                count: vals.count,
-            }))
+        const sorted = Array.from(byMerchant.entries())
+            .map(([name, vals]) => {
+                if (vals.total > maxTotal) maxTotal = vals.total;
+                return {
+                    name,
+                    total: Math.round(vals.total * 100) / 100,
+                    count: vals.count,
+                };
+            })
             .sort((a, b) => b.total - a.total)
             .slice(0, 10);
+
+        return { items: sorted, maxTotal };
     }, [filteredTransactions]);
 
-    if (data.length === 0) return null;
+    if (data.items.length === 0) return null;
 
     const formatCurrency = (val: number) =>
         val.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
     return (
-        <div className="chart-card">
+        <div className="chart-card fade-in stagger-4">
             <h3 className="chart-title">Top 10 Maiores Gastos (Merchant)</h3>
-            <div className="chart-wrapper" style={{ height: Math.max(300, data.length * 40) }}>
-                <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={data} layout="vertical" margin={{ left: 10 }}>
-                        <XAxis type="number" tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }} />
-                        <YAxis
-                            type="category"
-                            dataKey="name"
-                            width={160}
-                            tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }}
-                        />
-                        <Tooltip
-                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                            formatter={(value: any, _: any, props: any) =>
-                                [`${formatCurrency(Number(value))} (${props?.payload?.count || 0}x)`, 'Total']
-                            }
-                            contentStyle={{ background: 'var(--color-card)', border: '1px solid var(--color-border)', borderRadius: '8px', color: 'var(--color-text)' }}
-                        />
-                        <Bar dataKey="total" fill="var(--color-warning)" radius={[0, 4, 4, 0]} animationDuration={800} />
-                    </BarChart>
-                </ResponsiveContainer>
+            <div className="merchant-list" style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginTop: '16px' }}>
+                {data.items.map((item, i) => (
+                    <div key={i} className="merchant-item" style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '11px' }}>
+                            <span style={{ color: 'var(--color-text-secondary)', fontWeight: 500 }}>{item.name} <span style={{ opacity: 0.5, marginLeft: 4 }}>({item.count}x)</span></span>
+                            <span style={{ fontFamily: 'var(--font-mono)', color: 'var(--color-text)' }}>{formatCurrency(item.total)}</span>
+                        </div>
+                        <div style={{ width: '100%', height: '4px', background: 'var(--color-border)', borderRadius: '2px', overflow: 'hidden' }}>
+                            <div
+                                style={{
+                                    height: '100%',
+                                    width: `${Math.max(2, (item.total / data.maxTotal) * 100)}%`,
+                                    background: 'var(--color-warning)',
+                                    transition: 'width 1s cubic-bezier(0.16, 1, 0.3, 1)'
+                                }}
+                            />
+                        </div>
+                    </div>
+                ))}
             </div>
         </div>
     );

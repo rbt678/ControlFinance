@@ -20,7 +20,7 @@ export default function CategoryChart() {
         return Array.from(byCategory.entries())
             .map(([id, value]) => {
                 const cat = CATEGORIES.find(c => c.id === id)!;
-                return { name: `${cat.emoji} ${cat.name}`, value: Math.round(value * 100) / 100, color: cat.color };
+                return { name: cat.name, emoji: cat.emoji, value: Math.round(value * 100) / 100, color: cat.color };
             })
             .sort((a, b) => b.value - a.value);
     }, [filteredTransactions]);
@@ -31,19 +31,20 @@ export default function CategoryChart() {
         val.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
     return (
-        <div className="chart-card">
+        <div className="chart-card fade-in stagger-4">
             <h3 className="chart-title">Gastos por Categoria</h3>
             <div className="chart-wrapper" style={{ height: 320 }}>
                 <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
                         <Pie
                             data={data}
+                            nameKey="name"
+                            dataKey="value"
                             cx="50%"
                             cy="50%"
                             innerRadius={60}
                             outerRadius={110}
                             paddingAngle={3}
-                            dataKey="value"
                             animationBegin={0}
                             animationDuration={800}
                         >
@@ -53,7 +54,7 @@ export default function CategoryChart() {
                         </Pie>
                         <Tooltip
                             formatter={(value) => formatCurrency(Number(value))}
-                            contentStyle={{ background: 'var(--color-card)', border: '1px solid var(--color-border)', borderRadius: '8px', color: 'var(--color-text)' }}
+                            contentStyle={{ background: 'var(--color-card)', border: '1px solid var(--color-border)', borderRadius: '2px', color: 'var(--color-text)' }}
                         />
                         <Legend
                             verticalAlign="bottom"
@@ -67,7 +68,10 @@ export default function CategoryChart() {
                 {data.map((item, i) => (
                     <div key={i} className="category-list-item">
                         <div className="category-dot" style={{ background: item.color }} />
-                        <span className="category-item-name">{item.name}</span>
+                        <span className="category-item-name">
+                            <span style={{ filter: 'grayscale(100%)', marginRight: '4px' }}>{item.emoji}</span>
+                            {item.name}
+                        </span>
                         <span className="category-item-value">{formatCurrency(item.value)}</span>
                     </div>
                 ))}

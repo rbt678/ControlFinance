@@ -36,7 +36,7 @@ export default function IncomeExpenseChart() {
         val.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
     return (
-        <div className="chart-card">
+        <div className="chart-card fade-in stagger-4">
             <h3 className="chart-title">Receita vs Despesa</h3>
             <div className="chart-wrapper" style={{ height: 300 }}>
                 <ResponsiveContainer width="100%" height="100%">
@@ -46,10 +46,10 @@ export default function IncomeExpenseChart() {
                         <YAxis tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }} />
                         <Tooltip
                             formatter={(value) => formatCurrency(Number(value))}
-                            contentStyle={{ background: 'var(--color-card)', border: '1px solid var(--color-border)', borderRadius: '8px', color: 'var(--color-text)' }}
+                            contentStyle={{ background: 'var(--color-card)', border: '1px solid var(--color-border)', borderRadius: '2px', color: 'var(--color-text)' }}
                         />
-                        <Bar dataKey="Receita" fill="var(--color-success)" radius={[4, 4, 0, 0]} animationDuration={800} />
-                        <Bar dataKey="Despesa" fill="var(--color-danger)" radius={[4, 4, 0, 0]} animationDuration={800} />
+                        <Bar dataKey="Receita" fill="var(--color-success)" radius={[2, 2, 0, 0]} animationDuration={800} />
+                        <Bar dataKey="Despesa" fill="var(--color-danger)" radius={[2, 2, 0, 0]} animationDuration={800} />
                     </BarChart>
                 </ResponsiveContainer>
             </div>
