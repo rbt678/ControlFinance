@@ -10,7 +10,7 @@ export default function FileUploader() {
     const [loadingFolder, setLoadingFolder] = useState(false);
     const hasFiles = state.parsedFiles.length > 0;
     const [userCollapsed, setUserCollapsed] = useState<boolean | null>(null);
-    const isCollapsed = userCollapsed !== null ? userCollapsed : hasFiles;
+    const isCollapsed = userCollapsed !== null ? userCollapsed : false;
 
     const setIsCollapsed = (val: boolean) => setUserCollapsed(val);
 

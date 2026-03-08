@@ -159,13 +159,22 @@ export default function FilterBar() {
                         {accounts.map(acct => {
                             const file = state.parsedFiles.find(f => f.account.acctId === acct);
                             const icon = file?.account.acctType === 'CREDITCARD' ? <svg viewBox="0 0 24 24" style={{ width: 14, height: 14 }}><rect x="1" y="4" width="22" height="16" rx="2" ry="2" /><line x1="1" y1="10" x2="23" y2="10" /></svg> : <svg viewBox="0 0 24 24" style={{ width: 14, height: 14 }}><line x1="3" y1="21" x2="21" y2="21" /><line x1="3" y1="10" x2="21" y2="10" /><path d="M5 6l7-3 7 3" /><line x1="4" y1="10" x2="4" y2="21" /><line x1="20" y1="10" x2="20" y2="21" /><line x1="8" y1="14" x2="8" y2="17" /><line x1="12" y1="14" x2="12" y2="17" /><line x1="16" y1="14" x2="16" y2="17" /></svg>;
+
+                            let displayName = acct.substring(0, 12) + '...';
+                            if (acct === '34674923-9' || acct === '346749239') {
+                                displayName = 'Conta Corrente';
+                            } else if (acct === '5e586deb-3875-476d-b06b-37ff54dabbc4') {
+                                displayName = 'Cartão de Crédito';
+                            }
+
                             return (
                                 <button
                                     key={acct}
                                     className={`filter-chip ${filters.accounts.includes(acct) ? 'active' : ''}`}
                                     onClick={() => toggleAccount(acct)}
+                                    style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
                                 >
-                                    {icon} {acct.substring(0, 12)}...
+                                    {icon} <span>{displayName}</span>
                                 </button>
                             );
                         })}

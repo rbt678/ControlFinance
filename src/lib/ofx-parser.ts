@@ -140,21 +140,32 @@ export function parseOFX(content: string, fileName: string): ParsedOFX {
   const currency = extractTag(content, 'CURDEF');
 
   // Detect account type
-  const isCreditCard = content.includes('<CREDITCARDMSGSRSV1>');
+  let isCreditCard = content.includes('<CREDITCARDMSGSRSV1>');
+  const acctId = extractTag(content, 'ACCTID');
+
+  // Manual overrides
+  if (acctId === '5e586deb-3875-476d-b06b-37ff54dabbc4') {
+    isCreditCard = true;
+  } else if (acctId === '34674923-9' || acctId === '346749239') {
+    isCreditCard = false;
+  }
 
   let account: OFXAccountInfo;
   let acctType: OFXAccountInfo['acctType'];
 
   if (isCreditCard) {
-    const acctId = extractTag(content, 'ACCTID');
     acctType = 'CREDITCARD';
     account = { acctId, acctType, org, fid, currency };
   } else {
     const bankId = extractTag(content, 'BANKID');
     const branchId = extractTag(content, 'BRANCHID');
-    const acctId = extractTag(content, 'ACCTID');
     const rawAcctType = extractTag(content, 'ACCTTYPE');
-    acctType = rawAcctType === 'SAVINGS' ? 'SAVINGS' : 'CHECKING';
+    // Force CHECKING if override matches
+    if (acctId === '34674923-9' || acctId === '346749239') {
+      acctType = 'CHECKING';
+    } else {
+      acctType = rawAcctType === 'SAVINGS' ? 'SAVINGS' : 'CHECKING';
+    }
     account = { bankId, branchId, acctId, acctType, org, fid, currency };
   }
 

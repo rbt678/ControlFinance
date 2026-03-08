@@ -61,8 +61,6 @@ function Dashboard() {
         onTouchMove={onTouchMove}
         onTouchEnd={onTouchEnd}
       >
-        <FileUploader />
-
         {state.parsedFiles.length > 0 && (
           <>
             {state.activeTab === 'dashboard' && (
@@ -102,39 +100,42 @@ function Dashboard() {
         )}
 
         {state.parsedFiles.length === 0 && (
-          <div className="welcome-state fade-in stagger-2">
-            <div className="welcome-card">
-              <svg className="welcome-icon" viewBox="0 0 24 24" style={{ width: 48, height: 48, stroke: 'var(--color-accent)', fill: 'none', strokeWidth: 1.5, marginBottom: 24 }}>
-                <path d="M18 20V10M12 20V4M6 20v-6" />
-              </svg>
-              <h2>Signal Control</h2>
-              <p>O sistema foi ativado. Inicialize a importação de dados arrastando um arquivo <code>.ofx</code> para a zona demarcada.</p>
-              <div className="welcome-features">
-                <div className="welcome-feature fade-in stagger-3">
-                  <svg viewBox="0 0 24 24" style={{ width: 24, height: 24, stroke: 'var(--color-primary)', fill: 'none', strokeWidth: 1.5 }}>
-                    <rect x="1" y="4" width="22" height="16" rx="2" ry="2" />
-                    <line x1="1" y1="10" x2="23" y2="10" />
-                  </svg>
-                  <span>Crédito</span>
-                </div>
-                <div className="welcome-feature fade-in stagger-3" style={{ animationDelay: '150ms' }}>
-                  <svg viewBox="0 0 24 24" style={{ width: 24, height: 24, stroke: 'var(--color-primary)', fill: 'none', strokeWidth: 1.5 }}>
-                    <line x1="3" y1="21" x2="21" y2="21" /><line x1="3" y1="10" x2="21" y2="10" /><path d="M5 6l7-3 7 3" /><line x1="4" y1="10" x2="4" y2="21" /><line x1="20" y1="10" x2="20" y2="21" /><line x1="8" y1="14" x2="8" y2="17" /><line x1="12" y1="14" x2="12" y2="17" /><line x1="16" y1="14" x2="16" y2="17" />
-                  </svg>
-                  <span>Corrente</span>
-                </div>
-                <div className="welcome-feature fade-in stagger-3" style={{ animationDelay: '250ms' }}>
-                  <svg viewBox="0 0 24 24" style={{ width: 24, height: 24, stroke: 'var(--color-primary)', fill: 'none', strokeWidth: 1.5 }}>
-                    <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-                  </svg>
-                  <span>Análise DRE</span>
-                </div>
-                <div className="welcome-feature fade-in stagger-3" style={{ animationDelay: '350ms' }}>
-                  <svg viewBox="0 0 24 24" style={{ width: 24, height: 24, stroke: 'var(--color-primary)', fill: 'none', strokeWidth: 1.5 }}>
-                    <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" />
-                    <line x1="7" y1="7" x2="7.01" y2="7" />
-                  </svg>
-                  <span>Mapeamento</span>
+          <div className="welcome-container" style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-xl)', width: '100%', maxWidth: '800px', margin: '0 auto', paddingTop: 'var(--space-2xl)' }}>
+            <FileUploader />
+            <div className="welcome-state fade-in stagger-2">
+              <div className="welcome-card">
+                <svg className="welcome-icon" viewBox="0 0 24 24" style={{ width: 48, height: 48, stroke: 'var(--color-accent)', fill: 'none', strokeWidth: 1.5, marginBottom: 24 }}>
+                  <path d="M18 20V10M12 20V4M6 20v-6" />
+                </svg>
+                <h2>Signal Control</h2>
+                <p>O sistema foi ativado. Inicialize a importação de dados arrastando um arquivo <code>.ofx</code> para a zona de upload acima.</p>
+                <div className="welcome-features">
+                  <div className="welcome-feature fade-in stagger-3">
+                    <svg viewBox="0 0 24 24" style={{ width: 24, height: 24, stroke: 'var(--color-primary)', fill: 'none', strokeWidth: 1.5 }}>
+                      <rect x="1" y="4" width="22" height="16" rx="2" ry="2" />
+                      <line x1="1" y1="10" x2="23" y2="10" />
+                    </svg>
+                    <span>Crédito</span>
+                  </div>
+                  <div className="welcome-feature fade-in stagger-3" style={{ animationDelay: '150ms' }}>
+                    <svg viewBox="0 0 24 24" style={{ width: 24, height: 24, stroke: 'var(--color-primary)', fill: 'none', strokeWidth: 1.5 }}>
+                      <line x1="3" y1="21" x2="21" y2="21" /><line x1="3" y1="10" x2="21" y2="10" /><path d="M5 6l7-3 7 3" /><line x1="4" y1="10" x2="4" y2="21" /><line x1="20" y1="10" x2="20" y2="21" /><line x1="8" y1="14" x2="8" y2="17" /><line x1="12" y1="14" x2="12" y2="17" /><line x1="16" y1="14" x2="16" y2="17" />
+                    </svg>
+                    <span>Corrente</span>
+                  </div>
+                  <div className="welcome-feature fade-in stagger-3" style={{ animationDelay: '250ms' }}>
+                    <svg viewBox="0 0 24 24" style={{ width: 24, height: 24, stroke: 'var(--color-primary)', fill: 'none', strokeWidth: 1.5 }}>
+                      <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+                    </svg>
+                    <span>Análise DRE</span>
+                  </div>
+                  <div className="welcome-feature fade-in stagger-3" style={{ animationDelay: '350ms' }}>
+                    <svg viewBox="0 0 24 24" style={{ width: 24, height: 24, stroke: 'var(--color-primary)', fill: 'none', strokeWidth: 1.5 }}>
+                      <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" />
+                      <line x1="7" y1="7" x2="7.01" y2="7" />
+                    </svg>
+                    <span>Mapeamento</span>
+                  </div>
                 </div>
               </div>
             </div>

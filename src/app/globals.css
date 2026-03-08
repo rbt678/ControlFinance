@@ -504,7 +504,13 @@ body {
 .file-chips {
   display: flex;
   flex-wrap: wrap;
+  align-items: flex-start;
+  align-content: flex-start;
   gap: var(--space-sm);
+  max-height: 180px;
+  overflow-y: auto;
+  padding-right: 8px;
+  /* For scrollbar */
 }
 
 .file-chip {

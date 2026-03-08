@@ -74,6 +74,16 @@ export default function AccountSummary() {
         },
     ];
 
+    // Per-account saldo cards, grouped by account ID using latest balance
+    const uniqueAccountsMap = new Map<string, typeof state.parsedFiles[0]>();
+    state.parsedFiles.forEach(f => {
+        const existing = uniqueAccountsMap.get(f.account.acctId);
+        if (!existing || new Date(f.ledgerBalance.asOfDate) > new Date(existing.ledgerBalance.asOfDate)) {
+            uniqueAccountsMap.set(f.account.acctId, f);
+        }
+    });
+    const uniqueAccounts = Array.from(uniqueAccountsMap.values());
+
     return (
         <div className="summary-grid">
             {cards.map((card, i) => (
@@ -90,8 +100,8 @@ export default function AccountSummary() {
             ))}
 
             {/* Per-account saldo cards */}
-            {state.parsedFiles.map((f, i) => (
-                <div key={f.fileName} className={`summary-card fade-in stagger-${((i + 6) % 4) + 1}`} style={{ '--card-accent': f.ledgerBalance.amount >= 0 ? 'var(--color-success)' : 'var(--color-danger)' } as React.CSSProperties}>
+            {uniqueAccounts.map((f, i) => (
+                <div key={f.account.acctId} className={`summary-card fade-in stagger-${((i + 6) % 4) + 1}`} style={{ '--card-accent': f.ledgerBalance.amount >= 0 ? 'var(--color-success)' : 'var(--color-danger)' } as React.CSSProperties}>
                     <div className="summary-card-header">
                         <span className="summary-card-label">
                             {f.account.acctType === 'CREDITCARD' ? 'CARTÃO DE CRÉDITO' : 'CONTA CORRENTE'}
