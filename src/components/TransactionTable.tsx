@@ -29,7 +29,7 @@ export default function TransactionTable() {
                 case 'date': cmp = a.date.localeCompare(b.date); break;
                 case 'amount': cmp = a.amount - b.amount; break;
                 case 'memo': cmp = a.memo.localeCompare(b.memo); break;
-                case 'category': cmp = a.category.name.localeCompare(b.category.name); break;
+                case 'category': cmp = (a.categories[0]?.name || '').localeCompare(b.categories[0]?.name || ''); break;
             }
             return sortDir === 'asc' ? cmp : -cmp;
         });
@@ -125,12 +125,17 @@ export default function TransactionTable() {
                                     )}
                                 </td>
                                 <td data-label="Categoria">
-                                    <span
-                                        className="category-badge"
-                                        style={{ borderColor: t.category.color, color: t.category.color }}
-                                    >
-                                        <span style={{ filter: 'grayscale(100%)' }}>{t.category.emoji}</span> {t.category.name}
-                                    </span>
+                                    <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
+                                        {t.categories.map(c => (
+                                            <span
+                                                key={c.id}
+                                                className="category-badge"
+                                                style={{ borderColor: c.color, color: c.color }}
+                                            >
+                                                <span style={{ filter: 'grayscale(100%)' }}>{c.emoji}</span> {c.name}
+                                            </span>
+                                        ))}
+                                    </div>
                                 </td>
                                 <td className={`td-amount ${t.type === 'CREDIT' ? 'positive' : 'negative'}`} data-label="Valor">
                                     {formatCurrency(t.amount)}

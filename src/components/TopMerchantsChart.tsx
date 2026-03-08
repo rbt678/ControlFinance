@@ -2,6 +2,7 @@
 
 import { useMemo } from 'react';
 import { useFinance } from '@/lib/store';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export default function TopMerchantsChart() {
     const { filteredTransactions, setFilters } = useFinance();
@@ -46,28 +47,45 @@ export default function TopMerchantsChart() {
     };
 
     return (
-        <div className="chart-card fade-in stagger-4">
-            <h3 className="chart-title">Top 10 Maiores Gastos (Merchant)</h3>
-            <div className="merchant-list" style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginTop: '16px' }}>
-                {data.items.map((item, i) => (
-                    <div key={i} className="merchant-item" style={{ display: 'flex', flexDirection: 'column', gap: '6px', cursor: 'pointer' }} onClick={() => handleMerchantClick(item.name)}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '11px' }}>
-                            <span style={{ color: 'var(--color-text-secondary)', fontWeight: 500 }}>{item.name} <span style={{ opacity: 0.5, marginLeft: 4 }}>({item.count}x)</span></span>
-                            <span style={{ fontFamily: 'var(--font-mono)', color: 'var(--color-text)' }}>{formatCurrency(item.total)}</span>
-                        </div>
-                        <div style={{ width: '100%', height: '4px', background: 'var(--color-border)', borderRadius: '2px', overflow: 'hidden' }}>
-                            <div
-                                style={{
-                                    height: '100%',
-                                    width: `${Math.max(2, (item.total / data.maxTotal) * 100)}%`,
-                                    background: 'var(--color-warning)',
-                                    transition: 'width 1s cubic-bezier(0.16, 1, 0.3, 1)'
-                                }}
-                            />
-                        </div>
-                    </div>
-                ))}
-            </div>
-        </div>
+        <AnimatePresence mode="popLayout">
+            <motion.div
+                className="chart-card"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ duration: 0.5, type: 'spring', bounce: 0.3, delay: 0.3 }}
+            >
+                <h3 className="chart-title">Top 10 Maiores Gastos (Merchant)</h3>
+                <div className="merchant-list" style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginTop: '16px' }}>
+                    {data.items.map((item, i) => (
+                        <motion.div
+                            key={item.name}
+                            className="merchant-item"
+                            style={{ display: 'flex', flexDirection: 'column', gap: '6px', cursor: 'pointer' }}
+                            onClick={() => handleMerchantClick(item.name)}
+                            initial={{ opacity: 0, x: -10 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: 0.1 * i + 0.3, duration: 0.3 }}
+                        >
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '11px' }}>
+                                <span style={{ color: 'var(--color-text-secondary)', fontWeight: 500 }}>{item.name} <span style={{ opacity: 0.5, marginLeft: 4 }}>({item.count}x)</span></span>
+                                <span style={{ fontFamily: 'var(--font-mono)', color: 'var(--color-text)' }}>{formatCurrency(item.total)}</span>
+                            </div>
+                            <div style={{ width: '100%', height: '4px', background: 'var(--color-border)', borderRadius: '2px', overflow: 'hidden' }}>
+                                <motion.div
+                                    initial={{ width: 0 }}
+                                    animate={{ width: `${Math.max(2, (item.total / data.maxTotal) * 100)}%` }}
+                                    transition={{ duration: 1, ease: "easeOut", delay: 0.8 + (i * 0.05) }}
+                                    style={{
+                                        height: '100%',
+                                        background: 'var(--color-warning)',
+                                    }}
+                                />
+                            </div>
+                        </motion.div>
+                    ))}
+                </div>
+            </motion.div>
+        </AnimatePresence>
     );
 }

@@ -3,6 +3,7 @@
 import { useMemo } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { useFinance } from '@/lib/store';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export default function IncomeExpenseChart() {
     const { filteredTransactions, setFilters } = useFinance();
@@ -69,23 +70,31 @@ export default function IncomeExpenseChart() {
     };
 
     return (
-        <div className="chart-card fade-in stagger-4">
-            <h3 className="chart-title">Receita vs Despesa</h3>
-            <div className="chart-wrapper" style={{ height: 300 }}>
-                <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={data} barGap={4}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
-                        <XAxis dataKey="month" tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }} />
-                        <YAxis tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }} />
-                        <Tooltip
-                            formatter={(value) => formatCurrency(Number(value))}
-                            contentStyle={{ background: 'var(--color-card)', border: '1px solid var(--color-border)', borderRadius: '2px', color: 'var(--color-text)' }}
-                        />
-                        <Bar dataKey="Receita" fill="var(--color-success)" radius={[2, 2, 0, 0]} animationDuration={800} style={{ cursor: 'pointer' }} onClick={(entry, index) => handleBarItemClick(entry, index, 'CREDIT')} />
-                        <Bar dataKey="Despesa" fill="var(--color-danger)" radius={[2, 2, 0, 0]} animationDuration={800} style={{ cursor: 'pointer' }} onClick={(entry, index) => handleBarItemClick(entry, index, 'DEBIT')} />
-                    </BarChart>
-                </ResponsiveContainer>
-            </div>
-        </div>
+        <AnimatePresence mode="popLayout">
+            <motion.div
+                className="chart-card"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ duration: 0.5, type: 'spring', bounce: 0.3, delay: 0.1 }}
+            >
+                <h3 className="chart-title">Receita vs Despesa</h3>
+                <div className="chart-wrapper" style={{ height: 300 }}>
+                    <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={data} barGap={4}>
+                            <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
+                            <XAxis dataKey="month" tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }} />
+                            <YAxis tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }} />
+                            <Tooltip
+                                formatter={(value) => formatCurrency(Number(value))}
+                                contentStyle={{ background: 'var(--color-card)', border: '1px solid var(--color-border)', borderRadius: '2px', color: 'var(--color-text)' }}
+                            />
+                            <Bar dataKey="Receita" fill="var(--color-success)" radius={[2, 2, 0, 0]} isAnimationActive={true} animationBegin={700} animationDuration={1200} animationEasing="ease-out" style={{ cursor: 'pointer' }} onClick={(entry, index) => handleBarItemClick(entry, index, 'CREDIT')} />
+                            <Bar dataKey="Despesa" fill="var(--color-danger)" radius={[2, 2, 0, 0]} isAnimationActive={true} animationBegin={700} animationDuration={1200} animationEasing="ease-out" style={{ cursor: 'pointer' }} onClick={(entry, index) => handleBarItemClick(entry, index, 'DEBIT')} />
+                        </BarChart>
+                    </ResponsiveContainer>
+                </div>
+            </motion.div>
+        </AnimatePresence>
     );
 }

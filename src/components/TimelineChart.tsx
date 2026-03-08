@@ -3,6 +3,7 @@
 import { useMemo, useState } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts';
 import { useFinance } from '@/lib/store';
+import { motion, AnimatePresence } from 'framer-motion';
 
 type Grouping = 'day' | 'week' | 'month';
 
@@ -83,56 +84,64 @@ export default function TimelineChart() {
     };
 
     return (
-        <div className="chart-card fade-in stagger-4">
-            <div className="chart-header">
-                <h3 className="chart-title">Gastos ao Longo do Tempo</h3>
-                <div className="chart-controls">
-                    <div className="chart-toggle">
-                        {(['day', 'week', 'month'] as Grouping[]).map(g => (
-                            <button key={g} className={`toggle-btn ${groupBy === g ? 'active' : ''}`} onClick={() => setGroupBy(g)}>
-                                {g === 'day' ? 'Dia' : g === 'week' ? 'Semana' : 'Mês'}
+        <AnimatePresence mode="popLayout">
+            <motion.div
+                className="chart-card"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ duration: 0.5, type: 'spring', bounce: 0.3, delay: 0.2 }}
+            >
+                <div className="chart-header">
+                    <h3 className="chart-title">Gastos ao Longo do Tempo</h3>
+                    <div className="chart-controls">
+                        <div className="chart-toggle">
+                            {(['day', 'week', 'month'] as Grouping[]).map(g => (
+                                <button key={g} className={`toggle-btn ${groupBy === g ? 'active' : ''}`} onClick={() => setGroupBy(g)}>
+                                    {g === 'day' ? 'Dia' : g === 'week' ? 'Semana' : 'Mês'}
+                                </button>
+                            ))}
+                        </div>
+                        <div className="chart-toggle">
+                            <button className={`toggle-btn ${chartType === 'bar' ? 'active' : ''}`} onClick={() => setChartType('bar')}>
+                                Barra
                             </button>
-                        ))}
-                    </div>
-                    <div className="chart-toggle">
-                        <button className={`toggle-btn ${chartType === 'bar' ? 'active' : ''}`} onClick={() => setChartType('bar')}>
-                            Barra
-                        </button>
-                        <button className={`toggle-btn ${chartType === 'line' ? 'active' : ''}`} onClick={() => setChartType('line')}>
-                            Linha
-                        </button>
+                            <button className={`toggle-btn ${chartType === 'line' ? 'active' : ''}`} onClick={() => setChartType('line')}>
+                                Linha
+                            </button>
+                        </div>
                     </div>
                 </div>
-            </div>
-            <div className="chart-wrapper" style={{ height: 300 }}>
-                <ResponsiveContainer width="100%" height="100%">
-                    {chartType === 'bar' ? (
-                        <BarChart data={data} onClick={handleChartClick} style={{ cursor: 'pointer' }}>
-                            <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
-                            <XAxis dataKey="date" tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }} />
-                            <YAxis tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }} />
-                            <Tooltip
-                                formatter={(value) => formatCurrency(Number(value))}
-                                contentStyle={{ background: 'var(--color-card)', border: '1px solid var(--color-border)', borderRadius: '2px', color: 'var(--color-text)' }}
-                                labelStyle={{ color: 'var(--color-text-secondary)' }}
-                            />
-                            <Bar dataKey="total" fill="var(--color-accent)" radius={[2, 2, 0, 0]} animationDuration={800} onClick={(data: any) => handleDateClick(data?.payload?.rawDate || data?.rawDate)} />
-                        </BarChart>
-                    ) : (
-                        <LineChart data={data} onClick={handleChartClick} style={{ cursor: 'pointer' }}>
-                            <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
-                            <XAxis dataKey="date" tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }} />
-                            <YAxis tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }} />
-                            <Tooltip
-                                formatter={(value) => formatCurrency(Number(value))}
-                                contentStyle={{ background: 'var(--color-card)', border: '1px solid var(--color-border)', borderRadius: '2px', color: 'var(--color-text)' }}
-                            />
-                            <Line type="monotone" dataKey="total" stroke="var(--color-accent)" strokeWidth={2} dot={{ fill: 'var(--color-accent)', r: 4 }} activeDot={{ onClick: (_e: any, payload: any) => handleDateClick(payload?.payload?.rawDate), cursor: 'pointer' }} animationDuration={800} />
-                        </LineChart>
-                    )}
-                </ResponsiveContainer>
-            </div>
-        </div>
+                <div className="chart-wrapper" style={{ height: 300 }}>
+                    <ResponsiveContainer width="100%" height="100%">
+                        {chartType === 'bar' ? (
+                            <BarChart data={data} onClick={handleChartClick} style={{ cursor: 'pointer' }}>
+                                <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
+                                <XAxis dataKey="date" tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }} />
+                                <YAxis tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }} />
+                                <Tooltip
+                                    formatter={(value) => formatCurrency(Number(value))}
+                                    contentStyle={{ background: 'var(--color-card)', border: '1px solid var(--color-border)', borderRadius: '2px', color: 'var(--color-text)' }}
+                                    labelStyle={{ color: 'var(--color-text-secondary)' }}
+                                />
+                                <Bar dataKey="total" fill="var(--color-accent)" radius={[2, 2, 0, 0]} isAnimationActive={true} animationBegin={800} animationDuration={1200} animationEasing="ease-out" onClick={(data: any) => handleDateClick(data?.payload?.rawDate || data?.rawDate)} />
+                            </BarChart>
+                        ) : (
+                            <LineChart data={data} onClick={handleChartClick} style={{ cursor: 'pointer' }}>
+                                <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
+                                <XAxis dataKey="date" tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }} />
+                                <YAxis tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }} />
+                                <Tooltip
+                                    formatter={(value) => formatCurrency(Number(value))}
+                                    contentStyle={{ background: 'var(--color-card)', border: '1px solid var(--color-border)', borderRadius: '2px', color: 'var(--color-text)' }}
+                                />
+                                <Line type="monotone" dataKey="total" stroke="var(--color-accent)" strokeWidth={2} dot={{ fill: 'var(--color-accent)', r: 4 }} activeDot={{ onClick: (_e: any, payload: any) => handleDateClick(payload?.payload?.rawDate), cursor: 'pointer' }} isAnimationActive={true} animationBegin={800} animationDuration={1200} animationEasing="ease-out" />
+                            </LineChart>
+                        )}
+                    </ResponsiveContainer>
+                </div>
+            </motion.div>
+        </AnimatePresence>
     );
 }
 

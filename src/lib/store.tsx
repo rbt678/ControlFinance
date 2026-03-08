@@ -2,11 +2,11 @@
 
 import React, { createContext, useContext, useReducer, useCallback, useEffect, ReactNode } from 'react';
 import { ParsedOFX, OFXTransaction, parseOFX } from './ofx-parser';
-import { categorizeTransaction, Category, DEFAULT_CATEGORIES } from './categories';
-import { loadFromLocalStorage, addFileToStorage, removeFileFromStorage, clearLocalStorage, saveCategoriesToLocalStorage, loadCategoriesFromLocalStorage } from './storage';
+import { Category, DEFAULT_CATEGORIES, categorizeTransaction } from './categories';
+import { loadFromLocalStorage, addFileToStorage, removeFileFromStorage, clearLocalStorage, saveCategoriesToLocalStorage, loadCategoriesFromLocalStorage, saveDriveFolderToLocalStorage, loadDriveFolderFromLocalStorage } from './storage';
 
 export interface EnrichedTransaction extends OFXTransaction {
-    category: Category;
+    categories: Category[];
     fileName: string;
 }
 
@@ -20,6 +20,7 @@ export interface Filters {
     dateStart: string;
     dateEnd: string;
     categories: string[];
+    categoryMatchMode: 'ANY' | 'ALL' | 'EXACT' | 'NONE';
     types: ('CREDIT' | 'DEBIT')[];
     accounts: string[];
     amountMin: string;
@@ -37,6 +38,7 @@ interface FinanceState {
     activeTab: 'dashboard' | 'transactions' | 'raw' | 'settings';
     isLoading: boolean;
     categories: Category[];
+    googleDriveFolder: { id: string, name: string } | null;
 }
 
 type Action =
@@ -54,12 +56,14 @@ type Action =
     | { type: 'ADD_CATEGORY'; payload: Category }
     | { type: 'UPDATE_CATEGORY'; payload: Category }
     | { type: 'DELETE_CATEGORY'; payload: string }
-    | { type: 'SET_CATEGORIES'; payload: Category[] };
+    | { type: 'SET_CATEGORIES'; payload: Category[] }
+    | { type: 'SET_GOOGLE_DRIVE_FOLDER'; payload: { id: string, name: string } | null };
 
 const defaultFilters: Filters = {
     dateStart: '',
     dateEnd: '',
     categories: [],
+    categoryMatchMode: 'ANY',
     types: [],
     accounts: [],
     amountMin: '',
@@ -77,6 +81,7 @@ const initialState: FinanceState = {
     activeTab: 'dashboard',
     isLoading: false,
     categories: DEFAULT_CATEGORIES,
+    googleDriveFolder: null,
 };
 
 function reducer(state: FinanceState, action: Action): FinanceState {
@@ -121,6 +126,8 @@ function reducer(state: FinanceState, action: Action): FinanceState {
         }
         case 'SET_CATEGORIES':
             return { ...state, categories: action.payload, transactions: reevaluateAll(state.parsedFiles, action.payload) };
+        case 'SET_GOOGLE_DRIVE_FOLDER':
+            return { ...state, googleDriveFolder: action.payload };
         default:
             return state;
     }
@@ -129,7 +136,7 @@ function reducer(state: FinanceState, action: Action): FinanceState {
 function enrichTransactions(parsed: ParsedOFX, categories: Category[]): EnrichedTransaction[] {
     return parsed.transactions.map(t => ({
         ...t,
-        category: categorizeTransaction(t.memo, categories),
+        categories: categorizeTransaction(t.memo, categories),
         fileName: parsed.fileName,
     }));
 }
@@ -171,6 +178,8 @@ interface FinanceContextType {
     updateCategory: (cat: Category) => void;
     deleteCategory: (id: string) => void;
     resetCategories: () => void;
+    setGoogleDriveFolder: (folder: { id: string, name: string } | null) => void;
+    syncGoogleDrive: () => Promise<void>;
 }
 
 const FinanceContext = createContext<FinanceContextType | null>(null);
@@ -180,6 +189,11 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
 
     // Load from localStorage on mount
     useEffect(() => {
+        const storedDriveFolder = loadDriveFolderFromLocalStorage();
+        if (storedDriveFolder) {
+            dispatch({ type: 'SET_GOOGLE_DRIVE_FOLDER', payload: storedDriveFolder });
+        }
+
         const storedCats = loadCategoriesFromLocalStorage();
         if (storedCats && storedCats.length > 0) {
             dispatch({ type: 'SET_CATEGORIES', payload: storedCats });
@@ -325,6 +339,62 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
         dispatch({ type: 'SET_CATEGORIES', payload: DEFAULT_CATEGORIES });
     }, []);
 
+    const setGoogleDriveFolder = useCallback((folder: { id: string, name: string } | null) => {
+        saveDriveFolderToLocalStorage(folder);
+        dispatch({ type: 'SET_GOOGLE_DRIVE_FOLDER', payload: folder });
+    }, []);
+
+    const syncGoogleDrive = useCallback(async () => {
+        if (!state.googleDriveFolder) return;
+        dispatch({ type: 'SET_LOADING', payload: true });
+        try {
+            const res = await fetch('/api/drive/sync', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ folderId: state.googleDriveFolder.id })
+            });
+            if (!res.ok) throw new Error('Falha ao sincronizar com Google Drive');
+            const data = await res.json();
+            const files: { fileName: string; content: string }[] = data.files || [];
+
+            // Same logic as loadFolderFiles above
+            const allFiles: ParsedOFX[] = [...state.parsedFiles];
+            const allTransactions: EnrichedTransaction[] = [...state.transactions];
+            let addedCount = 0;
+
+            for (const file of files) {
+                if (allFiles.some(f => f.fileName === file.fileName)) continue;
+                try {
+                    const parsed = parseOFX(file.content, file.fileName);
+                    allFiles.push(parsed);
+                    allTransactions.push(...enrichTransactions(parsed, state.categories));
+                    addFileToStorage(file.fileName, file.content);
+                    addedCount++;
+                } catch (e) {
+                    console.error(`Falha ao parsear ${file.fileName}:`, e);
+                }
+            }
+
+            if (addedCount > 0) {
+                dispatch({
+                    type: 'LOAD_ALL',
+                    payload: {
+                        files: allFiles,
+                        transactions: deduplicateTransactions(allTransactions),
+                    },
+                });
+                alert(`${addedCount} novos arquivos sincronizados.`);
+            } else {
+                alert('Nenhum arquivo novo encontrado na pasta do Drive.');
+            }
+        } catch (e) {
+            console.error('Falha ao sincronizar arquivos do drive:', e);
+            alert('Erro ao sincronizar arquivos do Google Drive.');
+        } finally {
+            dispatch({ type: 'SET_LOADING', payload: false });
+        }
+    }, [state.googleDriveFolder, state.parsedFiles, state.transactions, state.categories]);
+
     useEffect(() => {
         // Debounce or save whenever categories change, but prevent initial render save if equal to default
         if (state.categories !== DEFAULT_CATEGORIES) {
@@ -334,11 +404,33 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
 
     const filteredTransactions = React.useMemo(() => {
         let result = state.transactions;
-        const { dateStart, dateEnd, categories, types, accounts, amountMin, amountMax, search } = state.filters;
+        const { dateStart, dateEnd, categories, categoryMatchMode, types, accounts, amountMin, amountMax, search } = state.filters;
 
         if (dateStart) result = result.filter(t => t.date >= dateStart);
         if (dateEnd) result = result.filter(t => t.date <= dateEnd);
-        if (categories.length > 0) result = result.filter(t => categories.includes(t.category.id));
+        if (categories.length > 0) {
+            switch (categoryMatchMode) {
+                case 'ANY':
+                    // Must have AT LEAST ONE of the selected categories
+                    result = result.filter(t => t.categories.some(c => categories.includes(c.id)));
+                    break;
+                case 'ALL':
+                    // Must have ALL of the selected categories (can have others)
+                    result = result.filter(t => categories.every(c => t.categories.some(tc => tc.id === c)));
+                    break;
+                case 'EXACT':
+                    // Must have ALL selected categories AND ONLY the selected categories
+                    result = result.filter(t =>
+                        categories.every(c => t.categories.some(tc => tc.id === c)) &&
+                        t.categories.every(tc => categories.includes(tc.id))
+                    );
+                    break;
+                case 'NONE':
+                    // Must NOT have ANY of the selected categories
+                    result = result.filter(t => !t.categories.some(c => categories.includes(c.id)));
+                    break;
+            }
+        }
         if (types.length > 0) result = result.filter(t => types.includes(t.type));
         if (accounts.length > 0) result = result.filter(t => accounts.includes(t.accountId));
         if (amountMin) result = result.filter(t => Math.abs(t.amount) >= parseFloat(amountMin));
@@ -366,7 +458,9 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
         updateCategory,
         deleteCategory,
         resetCategories,
-    }), [state, addFile, removeFile, confirmDuplicates, setFilters, resetFilters, setActiveTab, filteredTransactions, loadFolderFiles, clearAll, addCategory, updateCategory, deleteCategory, resetCategories]);
+        setGoogleDriveFolder,
+        syncGoogleDrive,
+    }), [state, addFile, removeFile, confirmDuplicates, setFilters, resetFilters, setActiveTab, filteredTransactions, loadFolderFiles, clearAll, addCategory, updateCategory, deleteCategory, resetCategories, setGoogleDriveFolder, syncGoogleDrive]);
 
     return (
         <FinanceContext.Provider value={contextValue}>

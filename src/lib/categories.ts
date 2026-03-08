@@ -65,19 +65,25 @@ export const DEFAULT_CATEGORIES: Category[] = [
     },
 ];
 
-export function categorizeTransaction(memo: string, categories: Category[]): Category {
+export function categorizeTransaction(memo: string, categories: Category[]): Category[] {
     const lowerMemo = memo.toLowerCase();
+    const matchedCategories: Category[] = [];
 
     for (const category of categories) {
         if (category.id === 'other') continue;
         for (const keyword of category.keywords) {
             if (lowerMemo.includes(keyword.toLowerCase())) {
-                return category;
+                matchedCategories.push(category);
+                break; // Stop checking keywords for this category, but continue checking other categories
             }
         }
     }
 
-    return categories.find(c => c.id === 'other') || categories[categories.length - 1]; // "Outros"
+    if (matchedCategories.length === 0) {
+        matchedCategories.push(categories.find(c => c.id === 'other') || categories[categories.length - 1]); // "Outros"
+    }
+
+    return matchedCategories;
 }
 
 export function getCategoryById(id: string, categories: Category[]): Category {

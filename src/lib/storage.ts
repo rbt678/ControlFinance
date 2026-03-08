@@ -57,6 +57,30 @@ export function removeFileFromStorage(fileName: string): void {
     saveToLocalStorage(filtered);
 }
 
+const DRIVE_FOLDER_STORAGE_KEY = 'controlfinance_drive_folder';
+
+export function saveDriveFolderToLocalStorage(folder: { id: string, name: string } | null): void {
+    try {
+        if (!folder) {
+            localStorage.removeItem(DRIVE_FOLDER_STORAGE_KEY);
+        } else {
+            localStorage.setItem(DRIVE_FOLDER_STORAGE_KEY, JSON.stringify(folder));
+        }
+    } catch (e) {
+        console.error('Failed to save drive folder to localStorage:', e);
+    }
+}
+
+export function loadDriveFolderFromLocalStorage(): { id: string, name: string } | null {
+    try {
+        const raw = localStorage.getItem(DRIVE_FOLDER_STORAGE_KEY);
+        if (!raw) return null;
+        return JSON.parse(raw);
+    } catch {
+        return null;
+    }
+}
+
 const CATEGORIES_STORAGE_KEY = 'controlfinance_categories_v1';
 
 export function saveCategoriesToLocalStorage(categories: Category[]): void {

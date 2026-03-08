@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useFinance } from '@/lib/store';
 
 export default function Header() {
-    const { state, setActiveTab, clearAll } = useFinance();
+    const { state, setActiveTab } = useFinance();
     const [scrolled, setScrolled] = useState(false);
 
     useEffect(() => {
@@ -65,12 +65,6 @@ export default function Header() {
                     ))}
                 </nav>
                 <div className="header-right">
-                    {state.parsedFiles.length > 0 && (
-                        <button className="btn-clear" onClick={clearAll} title="Limpar todos os dados">
-                            <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></svg>
-                            Limpar
-                        </button>
-                    )}
                 </div>
             </div>
 

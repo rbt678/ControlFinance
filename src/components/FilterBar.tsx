@@ -1,6 +1,6 @@
 'use client';
 
-import { useFinance } from '@/lib/store';
+import { useFinance, Filters } from '@/lib/store';
 import { useState } from 'react';
 
 export default function FilterBar() {
@@ -139,7 +139,56 @@ export default function FilterBar() {
                 </div>
 
                 <div className="filter-chips-section">
-                    <label>Categorias</label>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: filters.categories.length > 0 ? '8px' : '12px' }}>
+                        <label style={{ margin: 0 }}>Categorias</label>
+                    </div>
+                    {filters.categories.length > 0 && (
+                        <div className="match-mode-selector" style={{ display: 'flex', flexDirection: 'column', gap: '8px', background: 'var(--color-bg-elevated)', padding: '12px', borderRadius: '8px', border: '1px solid var(--color-border)', marginBottom: '16px' }}>
+                            <div style={{ fontSize: '10px', textTransform: 'uppercase', color: 'var(--color-text-muted)', fontWeight: 600, letterSpacing: '0.5px' }}>
+                                Modo de Combinação
+                            </div>
+                            <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
+                                {([
+                                    { value: 'ANY', short: 'Qualquer', desc: 'Contém pelo menos uma (OR)' },
+                                    { value: 'ALL', short: 'Todas', desc: 'Contém todas as selecionadas (AND)' },
+                                    { value: 'EXACT', short: 'Apenas', desc: 'Exatamente estas, nenhuma a mais (EXACT)' },
+                                    { value: 'NONE', short: 'Nenhuma', desc: 'Excluir transações com estas opções (NOT)' }
+                                ] as const).map(mode => {
+                                    const isActive = filters.categoryMatchMode === mode.value;
+                                    return (
+                                        <button
+                                            key={mode.value}
+                                            onClick={(e) => { e.stopPropagation(); setFilters({ categoryMatchMode: mode.value }); }}
+                                            className={`mode-btn ${isActive ? 'active' : ''}`}
+                                            style={{
+                                                flex: 1,
+                                                border: isActive ? `1px solid var(--color-accent)` : '1px solid var(--color-border)',
+                                                background: isActive ? 'var(--color-bg)' : 'transparent',
+                                                color: isActive ? 'var(--color-accent)' : 'var(--color-text-secondary)',
+                                                boxShadow: isActive ? '0 2px 8px rgba(0,0,0,0.2)' : 'none',
+                                                padding: '6px 10px',
+                                                borderRadius: '6px',
+                                                fontSize: '11px',
+                                                fontWeight: isActive ? 600 : 500,
+                                                cursor: 'pointer',
+                                                transition: 'all 0.2s ease',
+                                                minWidth: '60px',
+                                                textAlign: 'center'
+                                            }}
+                                        >
+                                            {mode.short}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                            <div style={{ fontSize: '11px', color: 'var(--color-text-secondary)', marginTop: '2px' }}>
+                                {filters.categoryMatchMode === 'ANY' && 'Mostra transações que contenham pelo menos uma das categorias selecionadas.'}
+                                {filters.categoryMatchMode === 'ALL' && 'Mostra transações que contenham TODAS as categorias selecionadas (pode conter outras extras).'}
+                                {filters.categoryMatchMode === 'EXACT' && 'Mostra transações que contenham APENAS as categorias selecionadas (nenhuma extra).'}
+                                {filters.categoryMatchMode === 'NONE' && 'Oculta qualquer transação que possua alguma destas categorias.'}
+                            </div>
+                        </div>
+                    )}
                     <div className="filter-chips">
                         {state.categories.map(cat => (
                             <button

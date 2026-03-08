@@ -165,6 +165,7 @@ body {
   width: 100%;
   margin: 0 auto;
   padding: var(--space-xl);
+  min-height: 100vh;
 }
 
 /* ========================================
@@ -244,9 +245,14 @@ body {
 .header-nav {
   display: flex;
   gap: var(--space-md);
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
+}
+
+@media (min-width: 1500px) {
+  .header-nav.desktop-nav {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+  }
 }
 
 .nav-tab {
@@ -746,6 +752,31 @@ body {
   color: var(--color-text-muted);
   font-weight: 600;
   margin-bottom: 10px;
+  white-space: nowrap;
+}
+
+.match-mode-selector {
+  display: flex;
+  gap: 4px;
+  background: var(--color-bg-alt);
+  padding: 4px;
+  border-radius: 8px;
+  border: 1px solid var(--color-border);
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+@media (max-width: 600px) {
+  .filter-chips-section>div:first-child {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 12px;
+  }
+
+  .match-mode-selector {
+    width: 100%;
+    justify-content: flex-start;
+  }
 }
 
 .filter-chips {
@@ -1709,5 +1740,9 @@ body {
 
   .filter-grid {
     grid-template-columns: 1fr;
+  }
+
+  .raw-viewer-controls {
+    flex-direction: column;
   }
 }
