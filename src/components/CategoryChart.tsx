@@ -5,7 +5,7 @@ import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recha
 import { useFinance } from '@/lib/store';
 
 export default function CategoryChart() {
-    const { filteredTransactions, state: { categories } } = useFinance();
+    const { filteredTransactions, state: { categories }, setFilters } = useFinance();
 
     const data = useMemo(() => {
         const expenses = filteredTransactions.filter(t => t.type === 'DEBIT');
@@ -19,7 +19,7 @@ export default function CategoryChart() {
         return Array.from(byCategory.entries())
             .map(([id, value]) => {
                 const cat = categories.find(c => c.id === id)!;
-                return { name: cat.name, emoji: cat.emoji, value: Math.round(value * 100) / 100, color: cat.color };
+                return { name: cat.name, emoji: cat.emoji, value: Math.round(value * 100) / 100, color: cat.color, id };
             })
             .sort((a, b) => b.value - a.value);
     }, [filteredTransactions, categories]);
@@ -28,6 +28,10 @@ export default function CategoryChart() {
 
     const formatCurrency = (val: number) =>
         val.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
+    const handleCategoryClick = (categoryId: string) => {
+        setFilters({ categories: [categoryId] });
+    };
 
     return (
         <div className="chart-card fade-in stagger-4">
@@ -48,7 +52,7 @@ export default function CategoryChart() {
                             animationDuration={800}
                         >
                             {data.map((entry, index) => (
-                                <Cell key={index} fill={entry.color} stroke="transparent" />
+                                <Cell key={index} fill={entry.color} stroke="transparent" style={{ cursor: 'pointer', outline: 'none' }} onClick={() => handleCategoryClick(entry.id)} />
                             ))}
                         </Pie>
                         <Tooltip
@@ -65,7 +69,7 @@ export default function CategoryChart() {
             </div>
             <div className="category-list">
                 {data.map((item, i) => (
-                    <div key={i} className="category-list-item">
+                    <div key={i} className="category-list-item" style={{ cursor: 'pointer' }} onClick={() => handleCategoryClick(item.id)}>
                         <div className="category-dot" style={{ background: item.color }} />
                         <span className="category-item-name">
                             <span style={{ filter: 'grayscale(100%)', marginRight: '4px' }}>{item.emoji}</span>

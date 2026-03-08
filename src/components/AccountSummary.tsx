@@ -3,7 +3,7 @@
 import { useFinance } from '@/lib/store';
 
 export default function AccountSummary() {
-    const { state, filteredTransactions } = useFinance();
+    const { state, filteredTransactions, setFilters } = useFinance();
 
     if (state.parsedFiles.length === 0) return null;
 
@@ -36,6 +36,9 @@ export default function AccountSummary() {
             icon: <svg viewBox="0 0 24 24"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18" /><polyline points="17 6 23 6 23 12" /></svg>,
             color: 'var(--color-success)',
             sub: `${filteredTransactions.filter(t => t.type === 'CREDIT').length} entradas`,
+            onClick: () => {
+                setFilters({ types: ['CREDIT'] });
+            }
         },
         {
             label: 'Despesas',
@@ -43,6 +46,9 @@ export default function AccountSummary() {
             icon: <svg viewBox="0 0 24 24"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6" /><polyline points="17 18 23 18 23 12" /></svg>,
             color: 'var(--color-text)',
             sub: `${filteredTransactions.filter(t => t.type === 'DEBIT').length} saídas`,
+            onClick: () => {
+                setFilters({ types: ['DEBIT'] });
+            }
         },
         {
             label: 'Balanço',
@@ -87,7 +93,7 @@ export default function AccountSummary() {
     return (
         <div className="summary-grid">
             {cards.map((card, i) => (
-                <div key={i} className={`summary-card fade-in stagger-${(i % 4) + 1}`} style={{ '--card-accent': card.color } as React.CSSProperties}>
+                <div key={i} className={`summary-card fade-in stagger-${(i % 4) + 1}`} style={{ '--card-accent': card.color, cursor: card.onClick ? 'pointer' : 'default' } as React.CSSProperties} onClick={card.onClick}>
                     <div className="summary-card-header">
                         <span className="summary-card-label">{card.label}</span>
                         <span className="summary-card-icon">{card.icon}</span>
@@ -101,7 +107,7 @@ export default function AccountSummary() {
 
             {/* Per-account saldo cards */}
             {uniqueAccounts.map((f, i) => (
-                <div key={f.account.acctId} className={`summary-card fade-in stagger-${((i + 6) % 4) + 1}`} style={{ '--card-accent': f.ledgerBalance.amount >= 0 ? 'var(--color-success)' : 'var(--color-danger)' } as React.CSSProperties}>
+                <div key={f.account.acctId} className={`summary-card fade-in stagger-${((i + 6) % 4) + 1}`} style={{ '--card-accent': f.ledgerBalance.amount >= 0 ? 'var(--color-success)' : 'var(--color-danger)', cursor: 'pointer' } as React.CSSProperties} onClick={() => { setFilters({ accounts: [f.account.acctId] }); }}>
                     <div className="summary-card-header">
                         <span className="summary-card-label">
                             {f.account.acctType === 'CREDITCARD' ? 'CARTÃO DE CRÉDITO' : 'CONTA CORRENTE'}

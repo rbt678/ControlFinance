@@ -7,7 +7,7 @@ import { useFinance } from '@/lib/store';
 type Grouping = 'day' | 'week' | 'month';
 
 export default function TimelineChart() {
-    const { filteredTransactions } = useFinance();
+    const { filteredTransactions, setFilters } = useFinance();
     const [groupBy, setGroupBy] = useState<Grouping>('day');
     const [chartType, setChartType] = useState<'bar' | 'line'>('bar');
 
@@ -36,6 +36,7 @@ export default function TimelineChart() {
             .sort((a, b) => a[0].localeCompare(b[0]))
             .map(([date, total]) => ({
                 date: groupBy === 'month' ? date : formatShortDate(date),
+                rawDate: date,
                 total: Math.round(total * 100) / 100,
             }));
     }, [filteredTransactions, groupBy]);
@@ -44,6 +45,42 @@ export default function TimelineChart() {
 
     const formatCurrency = (val: number) =>
         val.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
+    const handleDateClick = (rawDate: string) => {
+        if (!rawDate) return;
+        let dateStart = '';
+        let dateEnd = '';
+
+        if (groupBy === 'day') {
+            dateStart = rawDate;
+            dateEnd = rawDate;
+        } else if (groupBy === 'week') {
+            const startDate = new Date(rawDate + 'T12:00:00');
+            dateStart = rawDate;
+            const endDate = new Date(startDate);
+            endDate.setDate(startDate.getDate() + 6);
+            dateEnd = endDate.toISOString().split('T')[0];
+        } else if (groupBy === 'month') {
+            const [yearStr, monthStr] = rawDate.split('-');
+            const year = parseInt(yearStr, 10);
+            const m = parseInt(monthStr, 10);
+            const lastDay = new Date(year, m, 0).getDate();
+            dateStart = `${rawDate}-01`;
+            dateEnd = `${rawDate}-${lastDay.toString().padStart(2, '0')}`;
+        }
+
+        setFilters({
+            dateStart,
+            dateEnd,
+            types: ['DEBIT']
+        });
+    };
+
+    const handleChartClick = (data: any) => {
+        if (data && data.activePayload && data.activePayload.length) {
+            handleDateClick(data.activePayload[0].payload.rawDate);
+        }
+    };
 
     return (
         <div className="chart-card fade-in stagger-4">
@@ -70,7 +107,7 @@ export default function TimelineChart() {
             <div className="chart-wrapper" style={{ height: 300 }}>
                 <ResponsiveContainer width="100%" height="100%">
                     {chartType === 'bar' ? (
-                        <BarChart data={data}>
+                        <BarChart data={data} onClick={handleChartClick} style={{ cursor: 'pointer' }}>
                             <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
                             <XAxis dataKey="date" tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }} />
                             <YAxis tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }} />
@@ -79,10 +116,10 @@ export default function TimelineChart() {
                                 contentStyle={{ background: 'var(--color-card)', border: '1px solid var(--color-border)', borderRadius: '2px', color: 'var(--color-text)' }}
                                 labelStyle={{ color: 'var(--color-text-secondary)' }}
                             />
-                            <Bar dataKey="total" fill="var(--color-accent)" radius={[2, 2, 0, 0]} animationDuration={800} />
+                            <Bar dataKey="total" fill="var(--color-accent)" radius={[2, 2, 0, 0]} animationDuration={800} onClick={(data: any) => handleDateClick(data?.payload?.rawDate || data?.rawDate)} />
                         </BarChart>
                     ) : (
-                        <LineChart data={data}>
+                        <LineChart data={data} onClick={handleChartClick} style={{ cursor: 'pointer' }}>
                             <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
                             <XAxis dataKey="date" tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }} />
                             <YAxis tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }} />
@@ -90,7 +127,7 @@ export default function TimelineChart() {
                                 formatter={(value) => formatCurrency(Number(value))}
                                 contentStyle={{ background: 'var(--color-card)', border: '1px solid var(--color-border)', borderRadius: '2px', color: 'var(--color-text)' }}
                             />
-                            <Line type="monotone" dataKey="total" stroke="var(--color-accent)" strokeWidth={2} dot={{ fill: 'var(--color-accent)', r: 4 }} animationDuration={800} />
+                            <Line type="monotone" dataKey="total" stroke="var(--color-accent)" strokeWidth={2} dot={{ fill: 'var(--color-accent)', r: 4 }} activeDot={{ onClick: (_e: any, payload: any) => handleDateClick(payload?.payload?.rawDate), cursor: 'pointer' }} animationDuration={800} />
                         </LineChart>
                     )}
                 </ResponsiveContainer>

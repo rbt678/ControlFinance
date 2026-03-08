@@ -4,7 +4,7 @@ import { useMemo } from 'react';
 import { useFinance } from '@/lib/store';
 
 export default function TopMerchantsChart() {
-    const { filteredTransactions } = useFinance();
+    const { filteredTransactions, setFilters } = useFinance();
 
     const data = useMemo(() => {
         const expenses = filteredTransactions.filter((t) => t.type === 'DEBIT');
@@ -41,12 +41,16 @@ export default function TopMerchantsChart() {
     const formatCurrency = (val: number) =>
         val.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
+    const handleMerchantClick = (name: string) => {
+        setFilters({ search: name });
+    };
+
     return (
         <div className="chart-card fade-in stagger-4">
             <h3 className="chart-title">Top 10 Maiores Gastos (Merchant)</h3>
             <div className="merchant-list" style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginTop: '16px' }}>
                 {data.items.map((item, i) => (
-                    <div key={i} className="merchant-item" style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <div key={i} className="merchant-item" style={{ display: 'flex', flexDirection: 'column', gap: '6px', cursor: 'pointer' }} onClick={() => handleMerchantClick(item.name)}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '11px' }}>
                             <span style={{ color: 'var(--color-text-secondary)', fontWeight: 500 }}>{item.name} <span style={{ opacity: 0.5, marginLeft: 4 }}>({item.count}x)</span></span>
                             <span style={{ fontFamily: 'var(--font-mono)', color: 'var(--color-text)' }}>{formatCurrency(item.total)}</span>
