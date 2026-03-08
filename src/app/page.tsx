@@ -14,6 +14,7 @@ import IncomeExpenseChart from '@/components/IncomeExpenseChart';
 import TopMerchantsChart from '@/components/TopMerchantsChart';
 import RawDataViewer from '@/components/RawDataViewer';
 import SettingsTab from '@/components/SettingsTab';
+import IntegrationsSection from '@/components/IntegrationsSection';
 import { motion, AnimatePresence } from 'framer-motion';
 
 function Dashboard() {
@@ -140,6 +141,7 @@ function Dashboard() {
               style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-xl)', width: '100%', maxWidth: '800px', margin: '0 auto', paddingTop: 'var(--space-2xl)' }}
             >
               <FileUploader />
+              <IntegrationsSection />
               <div className="welcome-state fade-in stagger-2">
                 <div className="welcome-card">
                   <svg className="welcome-icon" viewBox="0 0 24 24" style={{ width: 48, height: 48, stroke: 'var(--color-accent)', fill: 'none', strokeWidth: 1.5, marginBottom: 24 }}>
