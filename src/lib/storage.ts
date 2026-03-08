@@ -1,9 +1,12 @@
+import { Category } from './categories';
+
 const STORAGE_KEY = 'controlfinance_data';
 const STORAGE_VERSION = 1;
 
 interface StoredData {
     version: number;
     files: { fileName: string; content: string }[];
+    categories?: string; // Serialized categories
 }
 
 export function saveToLocalStorage(files: { fileName: string; content: string }[]): void {
@@ -52,4 +55,24 @@ export function removeFileFromStorage(fileName: string): void {
     const existing = loadFromLocalStorage();
     const filtered = existing.filter(f => f.fileName !== fileName);
     saveToLocalStorage(filtered);
+}
+
+const CATEGORIES_STORAGE_KEY = 'controlfinance_categories_v1';
+
+export function saveCategoriesToLocalStorage(categories: Category[]): void {
+    try {
+        localStorage.setItem(CATEGORIES_STORAGE_KEY, JSON.stringify(categories));
+    } catch (e) {
+        console.error('Failed to save categories to localStorage:', e);
+    }
+}
+
+export function loadCategoriesFromLocalStorage(): Category[] | null {
+    try {
+        const raw = localStorage.getItem(CATEGORIES_STORAGE_KEY);
+        if (!raw) return null;
+        return JSON.parse(raw);
+    } catch {
+        return null;
+    }
 }

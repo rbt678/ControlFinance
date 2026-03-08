@@ -1,7 +1,6 @@
 'use client';
 
 import { useFinance } from '@/lib/store';
-import { CATEGORIES } from '@/lib/categories';
 import { useState } from 'react';
 
 export default function FilterBar() {
@@ -142,7 +141,7 @@ export default function FilterBar() {
                 <div className="filter-chips-section">
                     <label>Categorias</label>
                     <div className="filter-chips">
-                        {CATEGORIES.map(cat => (
+                        {state.categories.map(cat => (
                             <button
                                 key={cat.id}
                                 className={`filter-chip ${filters.categories.includes(cat.id) ? 'active' : ''}`}

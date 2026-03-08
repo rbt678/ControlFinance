@@ -2,8 +2,8 @@
 
 import React, { createContext, useContext, useReducer, useCallback, useEffect, ReactNode } from 'react';
 import { ParsedOFX, OFXTransaction, parseOFX } from './ofx-parser';
-import { categorizeTransaction, Category } from './categories';
-import { loadFromLocalStorage, addFileToStorage, removeFileFromStorage, clearLocalStorage } from './storage';
+import { categorizeTransaction, Category, DEFAULT_CATEGORIES } from './categories';
+import { loadFromLocalStorage, addFileToStorage, removeFileFromStorage, clearLocalStorage, saveCategoriesToLocalStorage, loadCategoriesFromLocalStorage } from './storage';
 
 export interface EnrichedTransaction extends OFXTransaction {
     category: Category;
@@ -34,8 +34,9 @@ interface FinanceState {
     duplicates: DuplicateInfo[];
     showDuplicateModal: boolean;
     pendingFile: { fileName: string; content: string } | null;
-    activeTab: 'dashboard' | 'transactions' | 'raw';
+    activeTab: 'dashboard' | 'transactions' | 'raw' | 'settings';
     isLoading: boolean;
+    categories: Category[];
 }
 
 type Action =
@@ -49,7 +50,11 @@ type Action =
     | { type: 'SET_PENDING_FILE'; payload: { fileName: string; content: string } | null }
     | { type: 'SET_ACTIVE_TAB'; payload: FinanceState['activeTab'] }
     | { type: 'SET_LOADING'; payload: boolean }
-    | { type: 'LOAD_ALL'; payload: { files: ParsedOFX[]; transactions: EnrichedTransaction[] } };
+    | { type: 'LOAD_ALL'; payload: { files: ParsedOFX[]; transactions: EnrichedTransaction[] } }
+    | { type: 'ADD_CATEGORY'; payload: Category }
+    | { type: 'UPDATE_CATEGORY'; payload: Category }
+    | { type: 'DELETE_CATEGORY'; payload: string }
+    | { type: 'SET_CATEGORIES'; payload: Category[] };
 
 const defaultFilters: Filters = {
     dateStart: '',
@@ -71,6 +76,7 @@ const initialState: FinanceState = {
     pendingFile: null,
     activeTab: 'dashboard',
     isLoading: false,
+    categories: DEFAULT_CATEGORIES,
 };
 
 function reducer(state: FinanceState, action: Action): FinanceState {
@@ -101,17 +107,36 @@ function reducer(state: FinanceState, action: Action): FinanceState {
             return { ...state, isLoading: action.payload };
         case 'LOAD_ALL':
             return { ...state, parsedFiles: action.payload.files, transactions: action.payload.transactions };
+        case 'ADD_CATEGORY': {
+            const newCats = [...state.categories, action.payload];
+            return { ...state, categories: newCats, transactions: reevaluateAll(state.parsedFiles, newCats) };
+        }
+        case 'UPDATE_CATEGORY': {
+            const newCats = state.categories.map(c => c.id === action.payload.id ? action.payload : c);
+            return { ...state, categories: newCats, transactions: reevaluateAll(state.parsedFiles, newCats) };
+        }
+        case 'DELETE_CATEGORY': {
+            const newCats = state.categories.filter(c => c.id !== action.payload);
+            return { ...state, categories: newCats, transactions: reevaluateAll(state.parsedFiles, newCats) };
+        }
+        case 'SET_CATEGORIES':
+            return { ...state, categories: action.payload, transactions: reevaluateAll(state.parsedFiles, action.payload) };
         default:
             return state;
     }
 }
 
-function enrichTransactions(parsed: ParsedOFX): EnrichedTransaction[] {
+function enrichTransactions(parsed: ParsedOFX, categories: Category[]): EnrichedTransaction[] {
     return parsed.transactions.map(t => ({
         ...t,
-        category: categorizeTransaction(t.memo),
+        category: categorizeTransaction(t.memo, categories),
         fileName: parsed.fileName,
     }));
+}
+
+function reevaluateAll(parsedFiles: ParsedOFX[], categories: Category[]): EnrichedTransaction[] {
+    const all = parsedFiles.flatMap(f => enrichTransactions(f, categories));
+    return deduplicateTransactions(all);
 }
 
 function findDuplicates(
@@ -142,6 +167,10 @@ interface FinanceContextType {
     filteredTransactions: EnrichedTransaction[];
     loadFolderFiles: () => Promise<void>;
     clearAll: () => void;
+    addCategory: (cat: Category) => void;
+    updateCategory: (cat: Category) => void;
+    deleteCategory: (id: string) => void;
+    resetCategories: () => void;
 }
 
 const FinanceContext = createContext<FinanceContextType | null>(null);
@@ -151,15 +180,22 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
 
     // Load from localStorage on mount
     useEffect(() => {
+        const storedCats = loadCategoriesFromLocalStorage();
+        if (storedCats && storedCats.length > 0) {
+            dispatch({ type: 'SET_CATEGORIES', payload: storedCats });
+        }
+
         const stored = loadFromLocalStorage();
         if (stored.length > 0) {
             const allFiles: ParsedOFX[] = [];
             const allTransactions: EnrichedTransaction[] = [];
+            const currentCats = storedCats && storedCats.length > 0 ? storedCats : DEFAULT_CATEGORIES;
+
             for (const file of stored) {
                 try {
                     const parsed = parseOFX(file.content, file.fileName);
                     allFiles.push(parsed);
-                    allTransactions.push(...enrichTransactions(parsed));
+                    allTransactions.push(...enrichTransactions(parsed, currentCats));
                 } catch (e) {
                     console.error(`Failed to parse stored file ${file.fileName}:`, e);
                 }
@@ -171,7 +207,7 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
     const addFile = useCallback((fileName: string, content: string, skipDuplicateCheck = false) => {
         try {
             const parsed = parseOFX(content, fileName);
-            const enriched = enrichTransactions(parsed);
+            const enriched = enrichTransactions(parsed, state.categories);
 
             if (!skipDuplicateCheck) {
                 const dupes = findDuplicates(state.transactions, enriched, fileName);
@@ -190,7 +226,7 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
         } catch (e) {
             console.error('Failed to parse OFX:', e);
         }
-    }, [state.transactions]);
+    }, [state.transactions, state.categories]);
 
     const removeFile = useCallback((fileName: string) => {
         dispatch({ type: 'REMOVE_FILE', payload: fileName });
@@ -201,7 +237,7 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
         if (state.pendingFile) {
             if (overwrite) {
                 const parsed = parseOFX(state.pendingFile.content, state.pendingFile.fileName);
-                const enriched = enrichTransactions(parsed);
+                const enriched = enrichTransactions(parsed, state.categories);
                 // Remove existing transactions from the same file, then add new ones
                 const withoutOld = state.transactions.filter(
                     t => !state.duplicates.some(d => d.existing.id === t.id)
@@ -215,7 +251,7 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
         dispatch({ type: 'SHOW_DUPLICATE_MODAL', payload: false });
         dispatch({ type: 'SET_PENDING_FILE', payload: null });
         dispatch({ type: 'SET_DUPLICATES', payload: [] });
-    }, [state.pendingFile, state.transactions, state.duplicates]);
+    }, [state.pendingFile, state.transactions, state.duplicates, state.categories]);
 
     const setFilters = useCallback((filters: Partial<Filters>) => {
         dispatch({ type: 'SET_FILTERS', payload: filters });
@@ -247,7 +283,7 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
                 try {
                     const parsed = parseOFX(file.content, file.fileName);
                     allFiles.push(parsed);
-                    allTransactions.push(...enrichTransactions(parsed));
+                    allTransactions.push(...enrichTransactions(parsed, state.categories));
                     addFileToStorage(file.fileName, file.content);
                 } catch (e) {
                     console.error(`Failed to parse ${file.fileName}:`, e);
@@ -266,12 +302,35 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
         } finally {
             dispatch({ type: 'SET_LOADING', payload: false });
         }
-    }, [state.parsedFiles, state.transactions]);
+    }, [state.parsedFiles, state.transactions, state.categories]);
 
     const clearAll = useCallback(() => {
         dispatch({ type: 'LOAD_ALL', payload: { files: [], transactions: [] } });
         clearLocalStorage();
     }, []);
+
+    const addCategory = useCallback((cat: Category) => {
+        dispatch({ type: 'ADD_CATEGORY', payload: cat });
+    }, []);
+
+    const updateCategory = useCallback((cat: Category) => {
+        dispatch({ type: 'UPDATE_CATEGORY', payload: cat });
+    }, []);
+
+    const deleteCategory = useCallback((id: string) => {
+        dispatch({ type: 'DELETE_CATEGORY', payload: id });
+    }, []);
+
+    const resetCategories = useCallback(() => {
+        dispatch({ type: 'SET_CATEGORIES', payload: DEFAULT_CATEGORIES });
+    }, []);
+
+    useEffect(() => {
+        // Debounce or save whenever categories change, but prevent initial render save if equal to default
+        if (state.categories !== DEFAULT_CATEGORIES) {
+            saveCategoriesToLocalStorage(state.categories);
+        }
+    }, [state.categories]);
 
     const filteredTransactions = React.useMemo(() => {
         let result = state.transactions;
@@ -303,7 +362,11 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
         filteredTransactions,
         loadFolderFiles,
         clearAll,
-    }), [state, addFile, removeFile, confirmDuplicates, setFilters, resetFilters, setActiveTab, filteredTransactions, loadFolderFiles, clearAll]);
+        addCategory,
+        updateCategory,
+        deleteCategory,
+        resetCategories,
+    }), [state, addFile, removeFile, confirmDuplicates, setFilters, resetFilters, setActiveTab, filteredTransactions, loadFolderFiles, clearAll, addCategory, updateCategory, deleteCategory, resetCategories]);
 
     return (
         <FinanceContext.Provider value={contextValue}>

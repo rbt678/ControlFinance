@@ -6,7 +6,7 @@ export interface Category {
     keywords: string[];
 }
 
-export const CATEGORIES: Category[] = [
+export const DEFAULT_CATEGORIES: Category[] = [
     {
         id: 'transport',
         name: 'Transporte',
@@ -65,10 +65,10 @@ export const CATEGORIES: Category[] = [
     },
 ];
 
-export function categorizeTransaction(memo: string): Category {
+export function categorizeTransaction(memo: string, categories: Category[]): Category {
     const lowerMemo = memo.toLowerCase();
 
-    for (const category of CATEGORIES) {
+    for (const category of categories) {
         if (category.id === 'other') continue;
         for (const keyword of category.keywords) {
             if (lowerMemo.includes(keyword.toLowerCase())) {
@@ -77,9 +77,9 @@ export function categorizeTransaction(memo: string): Category {
         }
     }
 
-    return CATEGORIES[CATEGORIES.length - 1]; // "Outros"
+    return categories.find(c => c.id === 'other') || categories[categories.length - 1]; // "Outros"
 }
 
-export function getCategoryById(id: string): Category {
-    return CATEGORIES.find(c => c.id === id) || CATEGORIES[CATEGORIES.length - 1];
+export function getCategoryById(id: string, categories: Category[]): Category {
+    return categories.find(c => c.id === id) || categories.find(c => c.id === 'other') || categories[categories.length - 1];
 }

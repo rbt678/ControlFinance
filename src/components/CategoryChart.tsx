@@ -3,10 +3,9 @@
 import { useMemo } from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
 import { useFinance } from '@/lib/store';
-import { CATEGORIES } from '@/lib/categories';
 
 export default function CategoryChart() {
-    const { filteredTransactions } = useFinance();
+    const { filteredTransactions, state: { categories } } = useFinance();
 
     const data = useMemo(() => {
         const expenses = filteredTransactions.filter(t => t.type === 'DEBIT');
@@ -19,11 +18,11 @@ export default function CategoryChart() {
 
         return Array.from(byCategory.entries())
             .map(([id, value]) => {
-                const cat = CATEGORIES.find(c => c.id === id)!;
+                const cat = categories.find(c => c.id === id)!;
                 return { name: cat.name, emoji: cat.emoji, value: Math.round(value * 100) / 100, color: cat.color };
             })
             .sort((a, b) => b.value - a.value);
-    }, [filteredTransactions]);
+    }, [filteredTransactions, categories]);
 
     if (data.length === 0) return null;
 

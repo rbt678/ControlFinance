@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useRef, useState, useEffect } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { useFinance } from '@/lib/store';
 
 export default function FileUploader() {
@@ -8,17 +8,11 @@ export default function FileUploader() {
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [isDragging, setIsDragging] = useState(false);
     const [loadingFolder, setLoadingFolder] = useState(false);
-    const [isCollapsed, setIsCollapsed] = useState(false);
-
     const hasFiles = state.parsedFiles.length > 0;
+    const [userCollapsed, setUserCollapsed] = useState<boolean | null>(null);
+    const isCollapsed = userCollapsed !== null ? userCollapsed : hasFiles;
 
-    useEffect(() => {
-        if (hasFiles) {
-            setIsCollapsed(true);
-        } else {
-            setIsCollapsed(false);
-        }
-    }, [hasFiles]);
+    const setIsCollapsed = (val: boolean) => setUserCollapsed(val);
 
     const handleFiles = useCallback((files: FileList | File[]) => {
         Array.from(files).forEach(file => {

@@ -13,11 +13,12 @@ import TimelineChart from '@/components/TimelineChart';
 import IncomeExpenseChart from '@/components/IncomeExpenseChart';
 import TopMerchantsChart from '@/components/TopMerchantsChart';
 import RawDataViewer from '@/components/RawDataViewer';
+import SettingsTab from '@/components/SettingsTab';
 
 function Dashboard() {
   const { state, setActiveTab } = useFinance();
 
-  const tabs = ['dashboard', 'transactions', 'raw'] as const;
+  const tabs = ['dashboard', 'transactions', 'raw', 'settings'] as const;
   const [touchStartX, setTouchStartX] = useState<number | null>(null);
   const [touchEndX, setTouchEndX] = useState<number | null>(null);
 
@@ -39,12 +40,12 @@ function Dashboard() {
     const isRightSwipe = distance < -minSwipeDistance;
 
     if (isLeftSwipe || isRightSwipe) {
-      const currentIndex = tabs.indexOf(state.activeTab as any);
+      const currentIndex = tabs.indexOf(state.activeTab as typeof tabs[number]);
       if (isLeftSwipe && currentIndex < tabs.length - 1) {
-        setActiveTab(tabs[currentIndex + 1] as any);
+        setActiveTab(tabs[currentIndex + 1]);
       }
       if (isRightSwipe && currentIndex > 0) {
-        setActiveTab(tabs[currentIndex - 1] as any);
+        setActiveTab(tabs[currentIndex - 1]);
       }
     }
   };
@@ -89,6 +90,12 @@ function Dashboard() {
             {state.activeTab === 'raw' && (
               <div className="raw-view fade-in">
                 <RawDataViewer />
+              </div>
+            )}
+
+            {state.activeTab === 'settings' && (
+              <div className="settings-view fade-in">
+                <SettingsTab />
               </div>
             )}
           </>
