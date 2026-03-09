@@ -19,6 +19,9 @@ export const metadata: Metadata = {
   title: "ControlFinance — Dashboard Financeiro OFX",
   description: "Dashboard completo para análise de extratos bancários OFX. Visualize transações, categorias, gráficos e dados raw de contas correntes e cartões de crédito.",
   keywords: ["finanças", "OFX", "dashboard", "extrato", "banco", "nubank", "transações"],
+  icons: {
+    icon: "/logo-controlfinance.png",
+  },
 };
 
 export default function RootLayout({

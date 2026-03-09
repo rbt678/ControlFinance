@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Image from 'next/image';
 import { useFinance } from '@/lib/store';
 
 export default function Header() {
@@ -43,9 +44,15 @@ export default function Header() {
             <div className="header-topbar">
                 <div className="header-left">
                     <div className="logo">
-                        <span className="logo-icon">
-                            <svg viewBox="0 0 24 24"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" /></svg>
-                        </span>
+                        <div className="logo-icon">
+                            <Image 
+                                src="/logo-controlfinance.png" 
+                                width={32} 
+                                height={32} 
+                                alt="ControlFinance Logo"
+                                priority
+                            />
+                        </div>
                         <h1 className="logo-text">ControlFinance</h1>
                     </div>
                     <span className="header-badge">

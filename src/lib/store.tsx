@@ -437,7 +437,7 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
         if (amountMax) result = result.filter(t => Math.abs(t.amount) <= parseFloat(amountMax));
         if (search) {
             const s = search.toLowerCase();
-            result = result.filter(t => t.memo.toLowerCase().includes(s) || t.fitId.toLowerCase().includes(s));
+            result = result.filter(t => t.memo.toLowerCase().includes(s));
         }
 
         return result.sort((a, b) => b.date.localeCompare(a.date));
