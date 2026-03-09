@@ -54,7 +54,7 @@ function Dashboard() {
 
   return (
     <div className="app">
-      <Header />
+      {state.parsedFiles.length > 0 && <Header />}
       <DuplicateModal />
 
       <main
@@ -133,50 +133,99 @@ function Dashboard() {
           <AnimatePresence mode="wait">
             <motion.div
               key="welcome"
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -30 }}
-              transition={{ duration: 0.5, ease: 'easeOut' }}
-              className="welcome-container"
-              style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-xl)', width: '100%', maxWidth: '800px', margin: '0 auto', paddingTop: 'var(--space-2xl)' }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.5 }}
+              className="welcome-container-wrapper"
             >
-              <FileUploader />
-              <IntegrationsSection />
-              <div className="welcome-state fade-in stagger-2">
-                <div className="welcome-card">
-                  <svg className="welcome-icon" viewBox="0 0 24 24" style={{ width: 48, height: 48, stroke: 'var(--color-accent)', fill: 'none', strokeWidth: 1.5, marginBottom: 24 }}>
-                    <path d="M18 20V10M12 20V4M6 20v-6" />
-                  </svg>
-                  <h2>Signal Control</h2>
-                  <p>O sistema foi ativado. Inicialize a importação de dados arrastando um arquivo <code>.ofx</code> para a zona de upload acima.</p>
-                  <div className="welcome-features">
-                    <div className="welcome-feature fade-in stagger-3">
-                      <svg viewBox="0 0 24 24" style={{ width: 24, height: 24, stroke: 'var(--color-primary)', fill: 'none', strokeWidth: 1.5 }}>
-                        <rect x="1" y="4" width="22" height="16" rx="2" ry="2" />
-                        <line x1="1" y1="10" x2="23" y2="10" />
-                      </svg>
-                      <span>Crédito</span>
-                    </div>
-                    <div className="welcome-feature fade-in stagger-3" style={{ animationDelay: '150ms' }}>
-                      <svg viewBox="0 0 24 24" style={{ width: 24, height: 24, stroke: 'var(--color-primary)', fill: 'none', strokeWidth: 1.5 }}>
-                        <line x1="3" y1="21" x2="21" y2="21" /><line x1="3" y1="10" x2="21" y2="10" /><path d="M5 6l7-3 7 3" /><line x1="4" y1="10" x2="4" y2="21" /><line x1="20" y1="10" x2="20" y2="21" /><line x1="8" y1="14" x2="8" y2="17" /><line x1="12" y1="14" x2="12" y2="17" /><line x1="16" y1="14" x2="16" y2="17" />
-                      </svg>
-                      <span>Corrente</span>
-                    </div>
-                    <div className="welcome-feature fade-in stagger-3" style={{ animationDelay: '250ms' }}>
-                      <svg viewBox="0 0 24 24" style={{ width: 24, height: 24, stroke: 'var(--color-primary)', fill: 'none', strokeWidth: 1.5 }}>
-                        <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-                      </svg>
-                      <span>Análise DRE</span>
-                    </div>
-                    <div className="welcome-feature fade-in stagger-3" style={{ animationDelay: '350ms' }}>
-                      <svg viewBox="0 0 24 24" style={{ width: 24, height: 24, stroke: 'var(--color-primary)', fill: 'none', strokeWidth: 1.5 }}>
-                        <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" />
-                        <line x1="7" y1="7" x2="7.01" y2="7" />
-                      </svg>
-                      <span>Mapeamento</span>
-                    </div>
+              <div className="welcome-layout">
+                {/* Left Column: Branding & Features */}
+                <div className="welcome-hero">
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.2 }}
+                    className="system-status-badge"
+                  >
+                    <span className="status-dot"></span>
+                    SISTEMA ATIVO & PRONTO
+                  </motion.div>
+
+                  <motion.h1
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.3, duration: 0.6 }}
+                  >
+                    Control <span>Finance</span>
+                  </motion.h1>
+
+                  <motion.p
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 0.4 }}
+                    className="hero-subtitle"
+                  >
+                    Plataforma de inteligência financeira. Importe seus arquivos OFX para iniciar o processamento de sinais e visualização de dados com Control Finance.
+                  </motion.p>
+
+                  <div className="welcome-features-grid">
+                    {[
+                      {
+                        title: 'Fluxo de Caixa',
+                        desc: 'Análise granular de entradas e saídas.',
+                        icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" /></svg>
+                      },
+                      {
+                        title: 'DRE Automático',
+                        desc: 'Demonstrativo de resultados em tempo real.',
+                        icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M18 20V10M12 20V4M6 20v-6" /></svg>
+                      },
+                      {
+                        title: 'Mapeamento',
+                        desc: 'Categorização inteligente via regex.',
+                        icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" /><line x1="7" y1="7" x2="7.01" y2="7" /></svg>
+                      },
+                      {
+                        title: 'Segurança Local',
+                        desc: 'Seus dados nunca saem do navegador.',
+                        icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
+                      }
+                    ].map((feature, i) => (
+                      <motion.div
+                        key={feature.title}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.5 + (i * 0.1) }}
+                        className="welcome-feature-card"
+                      >
+                        {feature.icon}
+                        <h3>{feature.title}</h3>
+                        <p>{feature.desc}</p>
+                      </motion.div>
+                    ))}
                   </div>
+                </div>
+
+                {/* Right Column: Upload & Integrations */}
+                <div className="welcome-actions">
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: 0.6 }}
+                    className="action-card"
+                  >
+                    <FileUploader />
+                  </motion.div>
+
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: 0.7 }}
+                    className="action-card"
+                  >
+                    <IntegrationsSection />
+                  </motion.div>
                 </div>
               </div>
             </motion.div>

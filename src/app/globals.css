@@ -1435,72 +1435,174 @@ body {
    Welcome/Empty State (Command Center vibe)
    ======================================== */
 
-.welcome-state {
+.welcome-container-wrapper {
   display: flex;
-  justify-content: center;
   align-items: center;
-  min-height: 60vh;
+  justify-content: center;
+  min-height: calc(100vh - 120px);
+  width: 100%;
+  padding: var(--space-xl) 0;
+  position: relative;
+  overflow: hidden;
 }
 
-.welcome-card {
-  text-align: center;
-  max-width: 600px;
+/* Subtle background pattern */
+.welcome-container-wrapper::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255, 107, 44, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 107, 44, 0.03) 1px, transparent 1px);
+  background-size: 40px 40px;
+  mask-image: radial-gradient(circle at center, black, transparent 80%);
+  pointer-events: none;
+  z-index: 0;
 }
 
-.welcome-icon svg {
-  width: 48px;
-  height: 48px;
-  stroke: var(--color-accent);
-  fill: none;
-  stroke-width: 1;
-  margin: 0 auto var(--space-xl);
+.welcome-layout {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: var(--space-2xl);
+  width: 100%;
+  max-width: 1100px;
+  position: relative;
+  z-index: 1;
 }
 
-.welcome-card h2 {
-  font-size: 32px;
-  font-weight: 300;
-  letter-spacing: -1px;
-  color: var(--color-text);
-  margin-bottom: var(--space-md);
+.welcome-hero {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
-.welcome-card p {
+.system-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
   font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--color-success);
+  background: rgba(52, 199, 89, 0.1);
+  padding: 4px 10px;
+  border-radius: 100px;
+  margin-bottom: var(--space-lg);
+  width: fit-content;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.status-dot {
+  width: 6px;
+  height: 6px;
+  background: var(--color-success);
+  border-radius: 50%;
+  box-shadow: 0 0 8px var(--color-success);
+  animation: pulse-status 2s infinite;
+}
+
+@keyframes pulse-status {
+  0% {
+    opacity: 0.5;
+  }
+
+  50% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0.5;
+  }
+}
+
+.welcome-hero h1 {
+  font-size: 64px;
+  font-weight: 800;
+  line-height: 0.9;
+  letter-spacing: -3px;
+  margin-bottom: var(--space-md);
+  color: var(--color-text);
+}
+
+.welcome-hero h1 span {
+  color: var(--color-accent);
+}
+
+.welcome-hero p.hero-subtitle {
+  font-family: var(--font-mono);
+  font-size: 14px;
   color: var(--color-text-secondary);
-  font-size: 13px;
+  line-height: 1.6;
+  max-width: 480px;
   margin-bottom: var(--space-2xl);
 }
 
-.welcome-features {
+.welcome-features-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: var(--space-lg);
-  text-align: left;
+  gap: var(--space-md);
 }
 
-.welcome-feature {
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  padding: var(--space-lg);
+.welcome-feature-card {
+  padding: var(--space-md);
+  background: rgba(15, 15, 15, 0.5);
   border: 1px solid var(--color-border);
-  background: var(--color-bg-elevated);
   border-radius: var(--radius-sm);
+  transition: all var(--transition-normal);
+  backdrop-filter: blur(10px);
 }
 
-.welcome-feature svg {
+.welcome-feature-card:hover {
+  border-color: var(--color-accent);
+  background: rgba(255, 107, 44, 0.05);
+  transform: translateY(-2px);
+}
+
+.welcome-feature-card svg {
   width: 20px;
   height: 20px;
-  stroke: var(--color-text);
-  fill: none;
-  stroke-width: 1.5;
-  flex-shrink: 0;
+  margin-bottom: 12px;
+  stroke: var(--color-accent);
 }
 
-.welcome-feature span {
-  font-size: 13px;
-  color: var(--color-text-secondary);
-  line-height: 1.5;
+.welcome-feature-card h3 {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+}
+
+.welcome-feature-card p {
+  font-size: 11px;
+  color: var(--color-text-muted);
+  line-height: 1.4;
+}
+
+.welcome-actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+  justify-content: center;
+}
+
+.action-card {
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border);
+  padding: var(--space-xl);
+  border-radius: var(--radius-sm);
+  position: relative;
+  overflow: hidden;
+}
+
+.action-card::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 40px;
+  height: 40px;
+  background: linear-gradient(45deg, transparent 50%, rgba(255, 107, 44, 0.1) 50%);
 }
 
 .empty-state {
@@ -1510,6 +1612,29 @@ body {
   font-family: var(--font-mono);
   font-size: 12px;
   text-transform: uppercase;
+}
+
+@media (max-width: 1000px) {
+  .welcome-layout {
+    grid-template-columns: 1fr;
+    max-width: 600px;
+    padding: 0 var(--space-md);
+  }
+
+  .welcome-hero {
+    text-align: center;
+    align-items: center;
+    margin-bottom: var(--space-2xl);
+  }
+
+  .welcome-hero h1 {
+    font-size: 48px;
+  }
+
+  .welcome-hero p.hero-subtitle {
+    margin-left: auto;
+    margin-right: auto;
+  }
 }
 
 /* Responsive basics & App-like Mobile Feel */

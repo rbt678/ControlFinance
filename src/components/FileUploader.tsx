@@ -41,7 +41,7 @@ export default function FileUploader() {
     }, [loadFolderFiles]);
 
     return (
-        <div className="file-uploader-section fade-in">
+        <div className="file-uploader-section">
             <div
                 className={`dropzone ${isDragging ? 'dragging' : ''} ${isCollapsed ? 'compact' : ''}`}
                 onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
