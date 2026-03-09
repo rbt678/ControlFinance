@@ -62,16 +62,16 @@ export default function FileUploader() {
                         <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /><line x1="12" y1="18" x2="12" y2="12" /><polyline points="9 15 12 12 15 15" /></svg>
                     </span>
                     <div>
-                        <p className="dropzone-title">
-                            {isDragging ? 'Solte os arquivos aqui' : isCollapsed ? 'Adicionar mais arquivos OFX' : 'Arraste arquivos OFX ou clique para selecionar'}
+                        <p className="dropzone-title" style={{ textTransform: 'uppercase', letterSpacing: '1px' }}>
+                            {isDragging ? 'SOLTAR AGORA' : isCollapsed ? 'ADICIONAR MAIS OFX' : 'ARRASTE ARQUIVOS OFX OU CLIQUE'}
                         </p>
-                        {!isCollapsed && <p className="dropzone-subtitle">Suporta conta corrente e cartão de crédito</p>}
+                        {!isCollapsed && <p className="dropzone-subtitle" style={{ fontSize: '10px', opacity: 0.6, textTransform: 'uppercase', marginTop: '4px' }}>CONTA CORRENTE • CARTÃO DE CRÉDITO</p>}
                     </div>
                 </div>
                 {isCollapsed && (
-                    <button className="btn-clear" onClick={(e) => { e.stopPropagation(); setIsCollapsed(false); fileInputRef.current?.click(); }}>
-                        <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
-                        Novo Arquivo
+                    <button className="btn-primary" style={{ padding: '6px 12px', fontSize: '10px' }} onClick={(e) => { e.stopPropagation(); setIsCollapsed(false); fileInputRef.current?.click(); }}>
+                        <svg viewBox="0 0 24 24" style={{ width: 14, height: 14 }}><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
+                        UPLOAD
                     </button>
                 )}
             </div>
@@ -79,15 +79,16 @@ export default function FileUploader() {
             {process.env.NODE_ENV === 'development' && !isCollapsed && (
                 <div className="btn-folder-wrapper">
                     <button
-                        className="btn-folder"
+                        className="btn-secondary"
+                        style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
                         onClick={handleLoadFolder}
                         disabled={loadingFolder || state.isLoading}
                     >
-                        <svg viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" /></svg>
-                        {loadingFolder ? 'Carregando...' : 'Ler pasta do projeto'}
+                        <svg viewBox="0 0 24 24" style={{ width: 16, height: 16 }}><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" /></svg>
+                        {loadingFolder ? 'CARREGANDO...' : 'LER PASTA DO PROJETO (/ofx-data)'}
                     </button>
-                    <p className="btn-folder-explanation">
-                        Esta opção carrega automaticamente arquivos OFX da pasta <code>/ofx-data</code> do projeto. Útil para testes rápidos em ambiente de desenvolvimento.
+                    <p className="btn-folder-explanation" style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                        Carregamento automático de ambiente local.
                     </p>
                 </div>
             )}

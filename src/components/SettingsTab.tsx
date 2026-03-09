@@ -29,26 +29,24 @@ export default function SettingsTab() {
     };
 
     return (
-        <div className="settings-container fade-in stagger-2" style={{ padding: '0', maxWidth: '800px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 'var(--space-2xl)' }}>
+        <div className="settings-container fade-in stagger-2">
 
             <IntegrationsSection />
 
             <section className="settings-section">
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-md)' }}>
-                    <div>
-                        <h2 style={{ fontSize: '24px', textTransform: 'uppercase', letterSpacing: '1px' }}>Arquivos de Dados</h2>
-                        <p style={{ color: 'var(--color-text-muted)', fontSize: '12px' }}>Faça upload de extratos OFX para atualizar seus dados financeiros.</p>
+                <div className="settings-section-header">
+                    <div className="settings-section-title">
+                        <h2>Arquivos de Dados</h2>
+                        <p>Gerencie seus extratos OFX e a base de dados local.</p>
                     </div>
                     {state.parsedFiles.length > 0 && (
                         <button
                             onClick={clearAll}
-                            style={{ padding: '8px 16px', background: 'transparent', border: '1px solid var(--color-danger)', color: 'var(--color-danger)', cursor: 'pointer', fontSize: '12px', textTransform: 'uppercase', fontFamily: 'var(--font-mono)' }}
+                            className="btn-clear"
                             title="Limpar todos os dados"
                         >
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                <svg viewBox="0 0 24 24" style={{ width: 14, height: 14, stroke: 'currentColor', fill: 'none', strokeWidth: 2 }}><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></svg>
-                                Limpar Todos os Dados
-                            </div>
+                            <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></svg>
+                            Limpar Dados
                         </button>
                     )}
                 </div>
@@ -56,48 +54,43 @@ export default function SettingsTab() {
             </section>
 
             <section className="settings-section">
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-xl)' }}>
-                    <div>
-                        <h2 style={{ fontSize: '24px', textTransform: 'uppercase', letterSpacing: '1px' }}>Categorias</h2>
-                        <p style={{ color: 'var(--color-text-muted)', fontSize: '12px' }}>Personalize regras, cores e identificadores.</p>
+                <div className="settings-section-header" style={{ marginBottom: 'var(--space-xl)' }}>
+                    <div className="settings-section-title">
+                        <h2>Categorias</h2>
+                        <p>Personalize regras, cores e identificadores para classificação automática.</p>
                     </div>
                     <div style={{ display: 'flex', gap: 'var(--space-md)' }}>
                         <button
                             onClick={handleReset}
-                            style={{ padding: '8px 16px', background: 'transparent', border: '1px solid var(--color-border)', color: 'var(--color-text-secondary)', cursor: 'pointer', fontSize: '12px', textTransform: 'uppercase', fontFamily: 'var(--font-mono)' }}
+                            className="btn-secondary"
                         >
                             Resetar Padrão
                         </button>
                         <button
                             onClick={() => setIsCreating(true)}
-                            style={{ padding: '8px 16px', background: 'var(--color-accent)', border: '1px solid var(--color-active, #000)', color: '#000', cursor: 'pointer', fontSize: '12px', textTransform: 'uppercase', fontFamily: 'var(--font-mono)', fontWeight: 600 }}
+                            className="btn-primary"
                         >
                             + Nova Categoria
                         </button>
                     </div>
                 </div>
 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-sm)' }}>
+                <div className="category-list-container">
                     {state.categories.map(cat => (
-                        <div key={cat.id} style={{
-                            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                            padding: 'var(--space-md) var(--space-lg)',
-                            background: 'var(--color-card)', border: '1px solid var(--color-border)',
-                            borderLeft: `4px solid ${cat.color}`, borderRadius: 'var(--radius-sm)'
-                        }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-md)' }}>
-                                <span style={{ fontSize: '24px', filter: 'grayscale(100%)' }}>{cat.emoji}</span>
+                        <div key={cat.id} className="category-card" style={{ borderLeft: `4px solid ${cat.color}` }}>
+                            <div className="category-card-info">
+                                <span className="category-card-emoji">{cat.emoji}</span>
                                 <div>
-                                    <h3 style={{ fontSize: '14px', textTransform: 'uppercase', letterSpacing: '1px', color: 'var(--color-text)' }}>{cat.name}</h3>
-                                    <p style={{ fontSize: '11px', color: 'var(--color-text-muted)', fontFamily: 'var(--font-mono)', marginTop: '4px' }}>
+                                    <h3 className="category-card-name">{cat.name}</h3>
+                                    <p className="category-card-keywords">
                                         {cat.keywords.length > 0 ? cat.keywords.join(' • ') : 'Sem palavras-chave'}
                                     </p>
                                 </div>
                             </div>
-                            <div style={{ display: 'flex', gap: 'var(--space-sm)' }}>
+                            <div className="category-card-actions">
                                 <button
                                     onClick={() => setEditingCategory(cat)}
-                                    style={{ background: 'none', border: 'none', color: 'var(--color-text-secondary)', cursor: 'pointer', padding: '8px' }}
+                                    className="btn-icon"
                                     title="Editar"
                                 >
                                     <svg viewBox="0 0 24 24" style={{ width: 16, height: 16, stroke: 'currentColor', fill: 'none', strokeWidth: 2 }}>
@@ -108,7 +101,7 @@ export default function SettingsTab() {
                                 {cat.id !== 'other' && (
                                     <button
                                         onClick={() => handleDelete(cat.id, cat.name)}
-                                        style={{ background: 'none', border: 'none', color: 'var(--color-danger)', cursor: 'pointer', padding: '8px' }}
+                                        className="btn-icon btn-icon-danger"
                                         title="Excluir"
                                     >
                                         <svg viewBox="0 0 24 24" style={{ width: 16, height: 16, stroke: 'currentColor', fill: 'none', strokeWidth: 2 }}>

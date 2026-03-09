@@ -56,80 +56,85 @@ export default function CategoryEditor({ category, onClose }: Props) {
 
     return (
         <div className="modal-overlay fade-in">
-            <div className="modal-content" style={{ maxWidth: '500px', padding: '0', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-sm)' }}>
-                <div style={{ padding: 'var(--space-lg)', borderBottom: '1px solid var(--color-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <h2 style={{ fontSize: '18px', textTransform: 'uppercase', letterSpacing: '1px' }}>
-                        {category ? 'Editar Categoria' : 'Nova Categoria'}
-                    </h2>
-                    <button onClick={onClose} style={{ background: 'none', border: 'none', color: 'var(--color-text-muted)', cursor: 'pointer' }}>
-                        <svg viewBox="0 0 24 24" style={{ width: 24, height: 24, stroke: 'currentColor', fill: 'none', strokeWidth: 2 }}>
-                            <line x1="18" y1="6" x2="6" y2="18" />
-                            <line x1="6" y1="6" x2="18" y2="18" />
-                        </svg>
-                    </button>
+            <div className="modal" style={{ maxWidth: '500px' }}>
+                <div className="modal-header">
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <h2>{category ? 'Editar Categoria' : 'Nova Categoria'}</h2>
+                        <button onClick={onClose} className="btn-icon">
+                            <svg viewBox="0 0 24 24" style={{ width: 24, height: 24, stroke: 'currentColor', fill: 'none', strokeWidth: 2 }}>
+                                <line x1="18" y1="6" x2="6" y2="18" />
+                                <line x1="6" y1="6" x2="18" y2="18" />
+                            </svg>
+                        </button>
+                    </div>
                 </div>
 
-                <form onSubmit={handleSubmit} style={{ padding: 'var(--space-lg)', display: 'flex', flexDirection: 'column', gap: 'var(--space-md)' }}>
-                    <div style={{ display: 'grid', gridTemplateColumns: '80px 1fr', gap: 'var(--space-md)' }}>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                            <label style={{ fontSize: '10px', textTransform: 'uppercase', color: 'var(--color-text-muted)', fontWeight: 600 }}>Emoji</label>
-                            <input
-                                type="text"
-                                value={emoji}
-                                onChange={e => setEmoji(e.target.value)}
-                                style={{ padding: '10px', background: 'var(--color-bg)', border: '1px solid var(--color-border)', color: 'var(--color-text)', textAlign: 'center', fontSize: '20px' }}
-                                maxLength={2}
-                            />
-                        </div>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                            <label style={{ fontSize: '10px', textTransform: 'uppercase', color: 'var(--color-text-muted)', fontWeight: 600 }}>Nome da Categoria</label>
-                            <input
-                                type="text"
-                                value={name}
-                                onChange={e => setName(e.target.value)}
-                                style={{ padding: '10px', background: 'var(--color-bg)', border: '1px solid var(--color-border)', color: 'var(--color-text)', fontFamily: 'var(--font-mono)' }}
-                                required
-                            />
-                        </div>
-                    </div>
-
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                        <label style={{ fontSize: '10px', textTransform: 'uppercase', color: 'var(--color-text-muted)', fontWeight: 600 }}>Cor</label>
-                        <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-                            {palette.map(p => (
-                                <button
-                                    key={p}
-                                    type="button"
-                                    onClick={() => setColor(p)}
-                                    style={{
-                                        width: '32px', height: '32px', borderRadius: '50%', background: p,
-                                        border: color === p ? '2px solid white' : '2px solid transparent',
-                                        cursor: 'pointer', transition: 'all var(--transition-fast)',
-                                        outline: color === p ? `2px solid ${p}` : 'none', outlineOffset: '2px'
-                                    }}
+                <form onSubmit={handleSubmit}>
+                    <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-lg)' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: '80px 1fr', gap: 'var(--space-md)' }}>
+                            <div className="filter-group">
+                                <label>Emoji</label>
+                                <input
+                                    type="text"
+                                    value={emoji}
+                                    onChange={e => setEmoji(e.target.value)}
+                                    className="filter-input text-center"
+                                    style={{ fontSize: '24px', textAlign: 'center' }}
+                                    maxLength={2}
                                 />
-                            ))}
+                            </div>
+                            <div className="filter-group">
+                                <label>Nome da Categoria</label>
+                                <input
+                                    type="text"
+                                    value={name}
+                                    onChange={e => setName(e.target.value)}
+                                    className="filter-input"
+                                    required
+                                />
+                            </div>
+                        </div>
+
+                        <div className="filter-group">
+                            <label>Cor do Sinal</label>
+                            <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', padding: '12px', background: 'var(--color-bg-elevated)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-sm)' }}>
+                                {palette.map(p => (
+                                    <button
+                                        key={p}
+                                        type="button"
+                                        onClick={() => setColor(p)}
+                                        style={{
+                                            width: '28px', height: '28px', borderRadius: '0px', background: p,
+                                            border: color === p ? '2px solid var(--color-text)' : '2px solid transparent',
+                                            cursor: 'pointer', transition: 'all var(--transition-fast)',
+                                            boxShadow: color === p ? `0 0 10px ${p}` : 'none'
+                                        }}
+                                        title={p}
+                                    />
+                                ))}
+                            </div>
+                        </div>
+
+                        <div className="filter-group">
+                            <label>Palavras-chave (memo lookup)</label>
+                            <textarea
+                                value={keywordsText}
+                                onChange={e => setKeywordsText(e.target.value)}
+                                className="filter-input"
+                                style={{ minHeight: '100px', resize: 'vertical' }}
+                                placeholder="ex: uber, 99, gasolina, posto..."
+                            />
+                            <p style={{ fontSize: '10px', color: 'var(--color-text-muted)', marginTop: '4px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                                Transações com estes termos serão classificadas automaticamente.
+                            </p>
                         </div>
                     </div>
 
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                        <label style={{ fontSize: '10px', textTransform: 'uppercase', color: 'var(--color-text-muted)', fontWeight: 600 }}>Palavras-chave (separadas por vírgula)</label>
-                        <textarea
-                            value={keywordsText}
-                            onChange={e => setKeywordsText(e.target.value)}
-                            style={{ padding: '10px', background: 'var(--color-bg)', border: '1px solid var(--color-border)', color: 'var(--color-text)', fontFamily: 'var(--font-mono)', minHeight: '80px', resize: 'vertical' }}
-                            placeholder="ex: uber, 99, gasolina, posto..."
-                        />
-                        <span style={{ fontSize: '11px', color: 'var(--color-text-muted)' }}>
-                            Transações contendo estas palavras na descrição (memo) serão automaticamente categorizadas aqui.
-                        </span>
-                    </div>
-
-                    <div style={{ marginTop: 'var(--space-md)', display: 'flex', justifyContent: 'flex-end', gap: 'var(--space-md)' }}>
-                        <button type="button" onClick={onClose} className="btn-secondary" style={{ padding: '10px 20px', border: '1px solid var(--color-border)', background: 'transparent', color: 'var(--color-text)', cursor: 'pointer', fontFamily: 'var(--font-mono)', textTransform: 'uppercase', fontSize: '12px' }}>
+                    <div className="modal-footer">
+                        <button type="button" onClick={onClose} className="btn-secondary">
                             Cancelar
                         </button>
-                        <button type="submit" className="btn-primary" style={{ padding: '10px 20px', border: '1px solid var(--color-accent)', background: 'var(--color-accent)', color: '#000', cursor: 'pointer', fontFamily: 'var(--font-mono)', textTransform: 'uppercase', fontSize: '12px', fontWeight: 600 }}>
+                        <button type="submit" className="btn-primary">
                             {category ? 'Salvar Alterações' : 'Criar Categoria'}
                         </button>
                     </div>
