@@ -2030,3 +2030,854 @@ body {
   color: var(--color-danger);
   background: rgba(255, 59, 48, 0.1);
 }
+
+/* ========================================
+   Integration Section — Google Drive
+   ======================================== */
+
+.section-icon {
+  width: 20px;
+  height: 20px;
+  stroke: var(--color-accent);
+  fill: none;
+  stroke-width: 2;
+  vertical-align: text-bottom;
+  margin-right: 8px;
+}
+
+.integration-loading {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  padding: var(--space-lg);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.loading-pulse {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color-accent);
+  animation: pulse-status 1.5s infinite;
+}
+
+.integration-connected {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+/* Connection Bar */
+.drive-connection-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+  padding: 10px 14px;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-left: 3px solid var(--color-success);
+}
+
+.drive-connection-info {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.drive-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color-success);
+  box-shadow: 0 0 8px rgba(52, 199, 89, 0.4);
+  flex-shrink: 0;
+}
+
+.drive-connection-details {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.drive-connection-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--color-success);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 600;
+}
+
+.drive-connection-email {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+}
+
+.drive-disconnect-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border: 1px solid var(--color-border);
+  background: transparent;
+  color: var(--color-text-muted);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.drive-disconnect-btn svg {
+  width: 14px;
+  height: 14px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 2;
+}
+
+.drive-disconnect-btn:hover {
+  border-color: var(--color-danger);
+  color: var(--color-danger);
+  background: rgba(255, 59, 48, 0.08);
+}
+
+/* Folder Section */
+.drive-folder-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.drive-folder-active {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.drive-folder-badge {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  padding: 12px 16px;
+  background: rgba(255, 107, 44, 0.06);
+  border: 1px solid rgba(255, 107, 44, 0.2);
+}
+
+.folder-icon {
+  width: 20px;
+  height: 20px;
+  stroke: var(--color-accent);
+  fill: none;
+  stroke-width: 2;
+  flex-shrink: 0;
+}
+
+.drive-folder-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+
+.drive-folder-label {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--color-text-muted);
+}
+
+.drive-folder-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-accent);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.drive-folder-change {
+  background: none;
+  border: 1px solid var(--color-border);
+  padding: 6px;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  flex-shrink: 0;
+}
+
+.drive-folder-change svg {
+  width: 14px;
+  height: 14px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 2;
+}
+
+.drive-folder-change:hover {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+  background: rgba(255, 107, 44, 0.08);
+}
+
+/* Sync Controls */
+.drive-sync-controls {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  flex-wrap: wrap;
+}
+
+.drive-sync-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background: var(--color-accent);
+  border: none;
+  color: #000;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.drive-sync-btn:hover:not(:disabled) {
+  background: var(--color-accent-light);
+}
+
+.drive-sync-btn:disabled {
+  opacity: 0.8;
+  cursor: not-allowed;
+}
+
+.drive-sync-btn.syncing {
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border);
+  color: var(--color-accent);
+}
+
+.sync-icon {
+  width: 16px;
+  height: 16px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 2;
+}
+
+.sync-icon.spinning {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.drive-sync-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+}
+
+.meta-icon {
+  width: 12px;
+  height: 12px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 2;
+}
+
+.sync-result-count {
+  color: var(--color-text-secondary);
+}
+
+/* Select Folder Button (when no folder is selected) */
+.drive-select-folder-btn {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  width: 100%;
+  padding: 16px;
+  background: var(--color-bg);
+  border: 1px dashed var(--color-border);
+  color: var(--color-text);
+  cursor: pointer;
+  text-align: left;
+  transition: all var(--transition-fast);
+}
+
+.drive-select-folder-btn svg {
+  width: 24px;
+  height: 24px;
+  stroke: var(--color-text-muted);
+  fill: none;
+  stroke-width: 1.5;
+  flex-shrink: 0;
+}
+
+.drive-select-folder-btn .chevron-icon {
+  width: 16px;
+  height: 16px;
+  margin-left: auto;
+}
+
+.select-folder-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+}
+
+.select-folder-title {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.select-folder-desc {
+  font-size: 11px;
+  color: var(--color-text-muted);
+}
+
+.drive-select-folder-btn:hover {
+  border-color: var(--color-accent);
+  border-style: solid;
+  background: rgba(255, 107, 44, 0.04);
+}
+
+.drive-select-folder-btn:hover svg {
+  stroke: var(--color-accent);
+}
+
+/* Google Login Button */
+.google-login-btn {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 24px;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  color: var(--color-text);
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  transition: all var(--transition-fast);
+  width: fit-content;
+  position: relative;
+  overflow: hidden;
+}
+
+.google-login-btn::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 3px;
+  height: 100%;
+  background: var(--color-border);
+  transition: background var(--transition-fast);
+}
+
+.google-login-btn:hover {
+  border-color: var(--color-text-muted);
+  background: var(--color-bg-elevated);
+}
+
+.google-login-btn:hover::before {
+  background: var(--color-accent);
+}
+
+/* ========================================
+   Folder Selector Modal
+   ======================================== */
+
+.folder-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(5, 5, 5, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  backdrop-filter: blur(4px);
+}
+
+.folder-modal {
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-top: 2px solid var(--color-accent);
+  width: 90%;
+  max-width: 520px;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.folder-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-lg) var(--space-xl);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.folder-modal-title {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.folder-modal-title h3 {
+  font-size: 14px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.folder-modal-icon {
+  width: 18px;
+  height: 18px;
+  stroke: var(--color-accent);
+  fill: none;
+  stroke-width: 2;
+}
+
+.folder-modal-close {
+  background: none;
+  border: none;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  padding: 4px;
+  transition: color var(--transition-fast);
+}
+
+.folder-modal-close svg {
+  width: 18px;
+  height: 18px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 2;
+}
+
+.folder-modal-close:hover {
+  color: var(--color-text);
+}
+
+/* Search */
+.folder-search-wrapper {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-sm) var(--space-xl);
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-bg-elevated);
+}
+
+.folder-search-icon {
+  width: 14px;
+  height: 14px;
+  stroke: var(--color-text-muted);
+  fill: none;
+  stroke-width: 2;
+  flex-shrink: 0;
+}
+
+.folder-search-input {
+  flex: 1;
+  background: none;
+  border: none;
+  outline: none;
+  color: var(--color-text);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  padding: 8px 0;
+}
+
+.folder-search-input::placeholder {
+  color: var(--color-text-muted);
+}
+
+.folder-search-clear {
+  background: none;
+  border: none;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  padding: 2px;
+  transition: color var(--transition-fast);
+}
+
+.folder-search-clear svg {
+  width: 14px;
+  height: 14px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 2;
+}
+
+.folder-search-clear:hover {
+  color: var(--color-text);
+}
+
+/* Body */
+.folder-modal-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--space-sm) 0;
+}
+
+.folder-list {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Breadcrumbs Navigation */
+.folder-breadcrumbs {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 8px var(--space-xl);
+  background: rgba(255, 255, 255, 0.02);
+  border-bottom: 1px solid var(--color-border);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.folder-breadcrumbs::-webkit-scrollbar {
+  display: none;
+}
+
+.breadcrumb-item {
+  background: none;
+  border: none;
+  font-size: 11px;
+  font-family: var(--font-mono);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  white-space: nowrap;
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  transition: all var(--transition-fast);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.breadcrumb-item:hover {
+  color: var(--color-text);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.breadcrumb-item.active {
+  color: var(--color-accent);
+  background: var(--color-accent-glow);
+}
+
+.breadcrumb-separator {
+  width: 12px;
+  height: 12px;
+  stroke: var(--color-text-muted);
+  fill: none;
+  stroke-width: 2;
+  flex-shrink: 0;
+}
+
+.breadcrumb-group {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* List Items Redesign */
+.folder-item-row {
+  display: flex;
+  align-items: stretch;
+  border-bottom: 1px solid var(--color-border-subtle);
+  transition: all var(--transition-fast);
+}
+
+.folder-item-row:hover {
+  background: var(--color-bg-elevated);
+}
+
+.folder-item-main {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  padding: 12px var(--space-xl);
+  background: none;
+  border: none;
+  color: var(--color-text);
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+  overflow: hidden;
+  transition: color var(--transition-fast);
+}
+
+.folder-item-main:hover {
+  color: var(--color-accent-light);
+}
+
+.folder-item-icon {
+  width: 16px;
+  height: 16px;
+  stroke: var(--color-text-muted);
+  fill: none;
+  stroke-width: 2;
+  flex-shrink: 0;
+  transition: stroke var(--transition-fast);
+}
+
+.folder-item-main:hover .folder-item-icon {
+  stroke: var(--color-accent);
+}
+
+.folder-item-name {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-weight: 500;
+}
+
+.folder-item-select {
+  padding: 0 var(--space-xl);
+  background: none;
+  border: none;
+  color: var(--color-accent);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  opacity: 0.3;
+  transition: all var(--transition-fast);
+  border-left: 1px solid var(--color-border-subtle);
+  letter-spacing: 1px;
+}
+
+.folder-item-select span {
+  display: none; /* Mobile optimization */
+}
+
+@media (min-width: 600px) {
+  .folder-item-select span {
+    display: inline;
+  }
+}
+
+.folder-item-select:hover {
+  opacity: 1;
+  background: var(--color-accent-glow);
+}
+
+.folder-item-select svg {
+  width: 14px;
+  height: 14px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 2.5;
+}
+
+.folder-empty-back {
+  margin-top: var(--space-md);
+  background: none;
+  border: 1px solid var(--color-border);
+  color: var(--color-text-secondary);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  padding: 6px 12px;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.folder-empty-back:hover {
+  border-color: var(--color-text-muted);
+  color: var(--color-text);
+}
+
+/* Loading/Error/Empty */
+.folder-loading {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: var(--space-sm) var(--space-xl);
+}
+
+.folder-skeleton {
+  height: 40px;
+  background: linear-gradient(90deg, var(--color-bg-elevated) 25%, var(--color-border-subtle) 50%, var(--color-bg-elevated) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 2px;
+}
+
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.folder-error,
+.folder-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-md);
+  padding: var(--space-2xl) var(--space-xl);
+  text-align: center;
+}
+
+.folder-error span,
+.folder-empty span {
+  font-size: 12px;
+  color: var(--color-text-muted);
+  font-family: var(--font-mono);
+}
+
+.folder-error-icon {
+  width: 32px;
+  height: 32px;
+  stroke: var(--color-danger);
+  fill: none;
+  stroke-width: 1.5;
+}
+
+.folder-empty-icon {
+  width: 32px;
+  height: 32px;
+  stroke: var(--color-text-muted);
+  fill: none;
+  stroke-width: 1.5;
+}
+
+/* Footer */
+.folder-modal-footer {
+  padding: 8px var(--space-xl);
+  border-top: 1px solid var(--color-border);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* ========================================
+   Toast Notifications
+   ======================================== */
+
+.toast-container {
+  position: fixed;
+  top: var(--space-xl);
+  right: var(--space-xl);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  z-index: 9999;
+  pointer-events: none;
+  max-width: 400px;
+}
+
+.toast-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: 12px 16px;
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border);
+  border-left: 3px solid;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  pointer-events: auto;
+}
+
+.toast-icon-wrapper {
+  flex-shrink: 0;
+}
+
+.toast-icon {
+  width: 16px;
+  height: 16px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 2;
+}
+
+.toast-message {
+  flex: 1;
+  font-size: 12px;
+  color: var(--color-text);
+  line-height: 1.4;
+}
+
+.toast-close {
+  background: none;
+  border: none;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  padding: 2px;
+  flex-shrink: 0;
+  transition: color var(--transition-fast);
+}
+
+.toast-close svg {
+  width: 14px;
+  height: 14px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 2;
+}
+
+.toast-close:hover {
+  color: var(--color-text);
+}
+
+@media (max-width: 900px) {
+  .toast-container {
+    top: auto;
+    bottom: 90px;
+    right: var(--space-md);
+    left: var(--space-md);
+    max-width: none;
+  }
+
+  .drive-connection-bar {
+    flex-direction: column;
+    gap: var(--space-sm);
+    align-items: flex-start;
+  }
+
+  .drive-disconnect-btn {
+    align-self: flex-end;
+  }
+
+  .drive-sync-controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .drive-sync-meta {
+    flex-wrap: wrap;
+  }
+}

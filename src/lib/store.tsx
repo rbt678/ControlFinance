@@ -28,6 +28,14 @@ export interface Filters {
     search: string;
 }
 
+export type SyncStatus = 'idle' | 'syncing' | 'success' | 'error';
+
+export interface SyncResult {
+    added: number;
+    found: number;
+    errors: string[];
+}
+
 interface FinanceState {
     parsedFiles: ParsedOFX[];
     transactions: EnrichedTransaction[];
@@ -39,6 +47,9 @@ interface FinanceState {
     isLoading: boolean;
     categories: Category[];
     googleDriveFolder: { id: string, name: string } | null;
+    syncStatus: SyncStatus;
+    lastSyncAt: number | null;
+    syncResult: SyncResult | null;
 }
 
 type Action =
@@ -57,7 +68,10 @@ type Action =
     | { type: 'UPDATE_CATEGORY'; payload: Category }
     | { type: 'DELETE_CATEGORY'; payload: string }
     | { type: 'SET_CATEGORIES'; payload: Category[] }
-    | { type: 'SET_GOOGLE_DRIVE_FOLDER'; payload: { id: string, name: string } | null };
+    | { type: 'SET_GOOGLE_DRIVE_FOLDER'; payload: { id: string, name: string } | null }
+    | { type: 'SET_SYNC_STATUS'; payload: SyncStatus }
+    | { type: 'SET_LAST_SYNC_AT'; payload: number }
+    | { type: 'SET_SYNC_RESULT'; payload: SyncResult | null };
 
 const defaultFilters: Filters = {
     dateStart: '',
@@ -82,6 +96,9 @@ const initialState: FinanceState = {
     isLoading: false,
     categories: DEFAULT_CATEGORIES,
     googleDriveFolder: null,
+    syncStatus: 'idle',
+    lastSyncAt: null,
+    syncResult: null,
 };
 
 function reducer(state: FinanceState, action: Action): FinanceState {
@@ -128,6 +145,12 @@ function reducer(state: FinanceState, action: Action): FinanceState {
             return { ...state, categories: action.payload, transactions: reevaluateAll(state.parsedFiles, action.payload) };
         case 'SET_GOOGLE_DRIVE_FOLDER':
             return { ...state, googleDriveFolder: action.payload };
+        case 'SET_SYNC_STATUS':
+            return { ...state, syncStatus: action.payload };
+        case 'SET_LAST_SYNC_AT':
+            return { ...state, lastSyncAt: action.payload };
+        case 'SET_SYNC_RESULT':
+            return { ...state, syncResult: action.payload };
         default:
             return state;
     }
@@ -179,7 +202,7 @@ interface FinanceContextType {
     deleteCategory: (id: string) => void;
     resetCategories: () => void;
     setGoogleDriveFolder: (folder: { id: string, name: string } | null) => void;
-    syncGoogleDrive: () => Promise<void>;
+    syncGoogleDrive: () => Promise<SyncResult | null>;
 }
 
 const FinanceContext = createContext<FinanceContextType | null>(null);
@@ -344,23 +367,32 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
         dispatch({ type: 'SET_GOOGLE_DRIVE_FOLDER', payload: folder });
     }, []);
 
-    const syncGoogleDrive = useCallback(async () => {
-        if (!state.googleDriveFolder) return;
+    const syncGoogleDrive = useCallback(async (): Promise<SyncResult | null> => {
+        if (!state.googleDriveFolder) return null;
         dispatch({ type: 'SET_LOADING', payload: true });
+        dispatch({ type: 'SET_SYNC_STATUS', payload: 'syncing' });
+        dispatch({ type: 'SET_SYNC_RESULT', payload: null });
+
         try {
             const res = await fetch('/api/drive/sync', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ folderId: state.googleDriveFolder.id })
             });
-            if (!res.ok) throw new Error('Falha ao sincronizar com Google Drive');
+
+            if (!res.ok) {
+                const errData = await res.json().catch(() => ({}));
+                throw new Error(errData.error || `HTTP ${res.status}`);
+            }
+
             const data = await res.json();
             const files: { fileName: string; content: string }[] = data.files || [];
+            const apiErrors: string[] = data.errors || [];
 
-            // Same logic as loadFolderFiles above
             const allFiles: ParsedOFX[] = [...state.parsedFiles];
             const allTransactions: EnrichedTransaction[] = [...state.transactions];
             let addedCount = 0;
+            const parseErrors: string[] = [];
 
             for (const file of files) {
                 if (allFiles.some(f => f.fileName === file.fileName)) continue;
@@ -371,7 +403,8 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
                     addFileToStorage(file.fileName, file.content);
                     addedCount++;
                 } catch (e) {
-                    console.error(`Falha ao parsear ${file.fileName}:`, e);
+                    const msg = e instanceof Error ? e.message : 'Erro desconhecido';
+                    parseErrors.push(`${file.fileName}: ${msg}`);
                 }
             }
 
@@ -383,13 +416,29 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
                         transactions: deduplicateTransactions(allTransactions),
                     },
                 });
-                alert(`${addedCount} novos arquivos sincronizados.`);
-            } else {
-                alert('Nenhum arquivo novo encontrado na pasta do Drive.');
             }
+
+            const result: SyncResult = {
+                added: addedCount,
+                found: data.found || files.length,
+                errors: [...apiErrors, ...parseErrors],
+            };
+
+            dispatch({ type: 'SET_SYNC_STATUS', payload: 'success' });
+            dispatch({ type: 'SET_LAST_SYNC_AT', payload: Date.now() });
+            dispatch({ type: 'SET_SYNC_RESULT', payload: result });
+            return result;
+
         } catch (e) {
             console.error('Falha ao sincronizar arquivos do drive:', e);
-            alert('Erro ao sincronizar arquivos do Google Drive.');
+            const result: SyncResult = {
+                added: 0,
+                found: 0,
+                errors: [e instanceof Error ? e.message : 'Erro desconhecido'],
+            };
+            dispatch({ type: 'SET_SYNC_STATUS', payload: 'error' });
+            dispatch({ type: 'SET_SYNC_RESULT', payload: result });
+            return result;
         } finally {
             dispatch({ type: 'SET_LOADING', payload: false });
         }
