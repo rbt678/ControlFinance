@@ -4,6 +4,7 @@ import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useFinance } from '@/lib/store';
 import { RecurringExpense, detectVariation, groupOccurrencesByMonth } from '@/lib/recurring';
+import RecurringModal from './RecurringModal';
 
 // ─── Formatters ──────────────────────────────────────────────────────────────
 
@@ -64,84 +65,7 @@ function MonthPills({ occurrences, allMonths }: { occurrences: RecurringExpense[
   );
 }
 
-// ─── Manual Add Form ──────────────────────────────────────────────────────────
-
-function ManualAddForm({ 
-  onAdd, 
-  onCancel,
-  initialExpense 
-}: { 
-  onAdd: (name: string, amount: number, searchKeyword?: string, excludeKeyword?: string) => void; 
-  onCancel: () => void;
-  initialExpense?: RecurringExpense;
-}) {
-  const [name, setName] = useState(initialExpense ? initialExpense.displayName : '');
-  const [amount, setAmount] = useState(initialExpense ? (initialExpense.baseAmount ?? initialExpense.averageAmount).toString() : '');
-  const [search, setSearch] = useState(initialExpense?.searchKeyword || '');
-  const [exclude, setExclude] = useState(initialExpense?.excludeKeyword || '');
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const v = parseFloat(amount.replace(',', '.'));
-    if (!name.trim() || isNaN(v) || v <= 0) return;
-    onAdd(name.trim(), v, search.trim() || undefined, exclude.trim() || undefined);
-  };
-
-  return (
-    <motion.form
-      className="recurring-manual-form"
-      initial={{ opacity: 0, height: 0 }}
-      animate={{ opacity: 1, height: 'auto' }}
-      exit={{ opacity: 0, height: 0 }}
-      transition={{ duration: 0.2 }}
-      onSubmit={handleSubmit}
-      style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}
-    >
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '8px' }}>
-        <input
-          id="recurring-manual-name"
-          className="recurring-input"
-          placeholder="Ex: Aluguel, Academia, Plano de Saúde…"
-          value={name}
-          onChange={e => setName(e.target.value)}
-          autoFocus={!initialExpense}
-        />
-        <input
-          id="recurring-manual-amount"
-          className="recurring-input"
-          type="number"
-          placeholder="Valor base mensal (R$)"
-          min={0}
-          step="0.01"
-          value={amount}
-          onChange={e => setAmount(e.target.value)}
-        />
-      </div>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '8px' }}>
-        <input
-          id="recurring-manual-search"
-          className="recurring-input"
-          placeholder="Palavras-chave (separadas por vírgula, busca AND)"
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-        />
-        <input
-          id="recurring-manual-exclude"
-          className="recurring-input"
-          placeholder="Ignorar se contiver (separadas por vírgula, busca OR)"
-          value={exclude}
-          onChange={e => setExclude(e.target.value)}
-        />
-      </div>
-      <div className="recurring-form-actions">
-        <button type="submit" className="recurring-btn-confirm" disabled={!name || !amount}>
-          {initialExpense ? 'Salvar Edição' : 'Adicionar'}
-        </button>
-        <button type="button" className="recurring-btn-dismiss" onClick={onCancel}>Cancelar</button>
-      </div>
-    </motion.form>
-  );
-}
+// ManualAddForm removed in favor of RecurringModal
 
 
 // ─── Confirmed Row ────────────────────────────────────────────────────────────
@@ -210,23 +134,21 @@ function ConfirmedRow({ expense, onDelete, onEdit }: { expense: RecurringExpense
               </p>
             )}
             <div style={{ display: 'flex', gap: '8px', padding: '0 12px 12px' }}>
-              {onEdit && (
-                <button
-                  style={{
-                    background: 'var(--color-bg-elevated)',
-                    border: '1px solid var(--color-border)',
-                    color: 'var(--color-text)',
-                    fontFamily: 'var(--font-mono)',
-                    fontSize: '11px',
-                    padding: '6px 12px',
-                    cursor: 'pointer',
-                    transition: 'all var(--transition-fast)'
-                  }}
-                  onClick={onEdit}
-                >
-                  ✎ Editar Regra
-                </button>
-              )}
+              <button
+                style={{
+                  background: 'var(--color-bg-elevated)',
+                  border: '1px solid var(--color-border)',
+                  color: 'var(--color-text)',
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: '11px',
+                  padding: '6px 12px',
+                  cursor: 'pointer',
+                  transition: 'all var(--transition-fast)'
+                }}
+                onClick={onEdit}
+              >
+                ✎ Editar Regra
+              </button>
               <button className="recurring-delete-btn" onClick={onDelete}>
                 🗑 Remover
               </button>
@@ -241,9 +163,9 @@ function ConfirmedRow({ expense, onDelete, onEdit }: { expense: RecurringExpense
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 export default function RecurringTab() {
-  const { state, addManualRecurring, updateRecurring, deleteRecurring, refreshRecurring } = useFinance();
-  const [showManualForm, setShowManualForm] = useState(false);
-  const [editingExpenseId, setEditingExpenseId] = useState<string | null>(null);
+  const { state, addManualRecurring, updateRecurring, deleteRecurring } = useFinance();
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingExpense, setEditingExpense] = useState<RecurringExpense | null>(null);
 
   // We add an effect to recalculate manually edited ones whenever we save a rule.
   // Actually, handleAddManual creates a base one, then we can trigger a refresh manually.
@@ -279,39 +201,45 @@ export default function RecurringTab() {
 
   const commitmentPct = monthlyIncome > 0 ? Math.min((totalCommitment / monthlyIncome) * 100, 100) : 0;
 
-  const handleAddManual = (name: string, amount: number, searchKeyword?: string, excludeKeyword?: string) => {
-    const id = `manual_${Date.now()}_${Math.random().toString(36).slice(2)}`;
-    addManualRecurring({
-      id,
-      normalizedKey: name.toUpperCase(),
-      displayName: name,
-      categoryIds: [],
-      confidence: 1,
-      averageAmount: amount, // will be overridden by refresh if keyword matches
-      baseAmount: amount,
-      searchKeyword,
-      excludeKeyword,
-      occurrences: [],
-      status: 'manual',
-      addedAt: Date.now(),
-    });
-    setShowManualForm(false);
+  const handleOpenAddModal = () => {
+    setEditingExpense(null);
+    setIsModalOpen(true);
   };
 
-  const handleEditManual = (id: string, name: string, amount: number, searchKeyword?: string, excludeKeyword?: string) => {
-    const expense = confirmed.find(e => e.id === id);
-    if (!expense) return;
-    updateRecurring({
-      ...expense,
-      displayName: name,
-      normalizedKey: name.toUpperCase(),
-      averageAmount: amount, // will be overridden by store reducer if keyword matches
-      baseAmount: amount,
-      searchKeyword,
-      excludeKeyword,
-      status: 'manual',
-    });
-    setEditingExpenseId(null);
+  const handleOpenEditModal = (expense: RecurringExpense) => {
+    setEditingExpense(expense);
+    setIsModalOpen(true);
+  };
+
+  const handleConfirmModal = (name: string, amount: number, searchKeyword?: string, excludeKeyword?: string) => {
+    if (editingExpense) {
+      updateRecurring({
+        ...editingExpense,
+        displayName: name,
+        normalizedKey: name.toUpperCase(),
+        averageAmount: amount, // will be overridden by store reducer if keyword matches
+        baseAmount: amount,
+        searchKeyword,
+        excludeKeyword,
+        status: 'manual',
+      });
+    } else {
+      const id = `manual_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+      addManualRecurring({
+        id,
+        normalizedKey: name.toUpperCase(),
+        displayName: name,
+        categoryIds: [],
+        confidence: 1,
+        averageAmount: amount, // will be overridden by refresh if keyword matches
+        baseAmount: amount,
+        searchKeyword,
+        excludeKeyword,
+        occurrences: [],
+        status: 'manual',
+        addedAt: Date.now(),
+      });
+    }
   };
 
   if (state.transactions.length === 0) {
@@ -362,7 +290,7 @@ export default function RecurringTab() {
         </div>
 
         {/* Confirmed list */}
-        {confirmed.length === 0 && !showManualForm && (
+        {confirmed.length === 0 && !isModalOpen && (
           <p className="recurring-empty-hint">
             Nenhum gasto confirmado ainda. Confirme candidatos abaixo ou adicione manualmente.
           </p>
@@ -371,41 +299,24 @@ export default function RecurringTab() {
         <div className="recurring-confirmed-list">
           <AnimatePresence>
             {confirmed.map(e => (
-              editingExpenseId === e.id ? (
-                <motion.div key={`edit-${e.id}`} layout initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={{ background: 'var(--color-bg-elevated)', border: '1px solid var(--color-border)', padding: '12px', marginBottom: '8px' }}>
-                  <ManualAddForm 
-                    initialExpense={e}
-                    onAdd={(name, amount, search, exclude) => handleEditManual(e.id, name, amount, search, exclude)}
-                    onCancel={() => setEditingExpenseId(null)}
-                  />
-                </motion.div>
-              ) : (
-                <ConfirmedRow
-                  key={e.id}
-                  expense={e}
-                  onDelete={() => deleteRecurring(e.id)}
-                  onEdit={() => setEditingExpenseId(e.id)}
-                />
-              )
+              <ConfirmedRow
+                key={e.id}
+                expense={e}
+                onDelete={() => deleteRecurring(e.id)}
+                onEdit={() => handleOpenEditModal(e)}
+              />
             ))}
           </AnimatePresence>
         </div>
 
         <div className="recurring-add-manual-row">
-          <AnimatePresence>
-            {showManualForm && (
-              <ManualAddForm onAdd={handleAddManual} onCancel={() => setShowManualForm(false)} />
-            )}
-          </AnimatePresence>
-          {!showManualForm && (
-            <button
-              id="add-manual-recurring-btn"
-              className="recurring-add-manual-btn"
-              onClick={() => setShowManualForm(true)}
-            >
-              + Adicionar manualmente
-            </button>
-          )}
+          <button
+            id="add-manual-recurring-btn"
+            className="recurring-add-manual-btn"
+            onClick={handleOpenAddModal}
+          >
+            + Adicionar manualmente
+          </button>
         </div>
       </section>
 
@@ -464,6 +375,17 @@ export default function RecurringTab() {
       )}
 
 
+      {/* ── Section D: Rule Configuration Modal ───────────────────── */}
+      <AnimatePresence>
+        {isModalOpen && (
+          <RecurringModal 
+            isOpen={isModalOpen}
+            onClose={() => setIsModalOpen(false)}
+            onConfirm={handleConfirmModal}
+            initialExpense={editingExpense}
+          />
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 }
