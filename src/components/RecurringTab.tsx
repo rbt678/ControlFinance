@@ -169,7 +169,7 @@ export default function RecurringTab() {
 
   // We add an effect to recalculate manually edited ones whenever we save a rule.
   // Actually, handleAddManual creates a base one, then we can trigger a refresh manually.
-  
+
   const confirmed = useMemo(() => {
     const all = state.recurringExpenses;
     return all.filter(e => e.status === 'confirmed' || e.status === 'manual');
@@ -315,7 +315,7 @@ export default function RecurringTab() {
             className="recurring-add-manual-btn"
             onClick={handleOpenAddModal}
           >
-            + Adicionar manualmente
+            + Adicionar
           </button>
         </div>
       </section>
@@ -378,7 +378,7 @@ export default function RecurringTab() {
       {/* ── Section D: Rule Configuration Modal ───────────────────── */}
       <AnimatePresence>
         {isModalOpen && (
-          <RecurringModal 
+          <RecurringModal
             isOpen={isModalOpen}
             onClose={() => setIsModalOpen(false)}
             onConfirm={handleConfirmModal}
