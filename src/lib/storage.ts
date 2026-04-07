@@ -100,3 +100,25 @@ export function loadCategoriesFromLocalStorage(): Category[] | null {
         return null;
     }
 }
+
+const RECURRING_STORAGE_KEY = 'controlfinance_recurring_v1';
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function saveRecurringToLocalStorage(recurring: any[]): void {
+    try {
+        localStorage.setItem(RECURRING_STORAGE_KEY, JSON.stringify(recurring));
+    } catch (e) {
+        console.error('Failed to save recurring expenses to localStorage:', e);
+    }
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function loadRecurringFromLocalStorage(): any[] | null {
+    try {
+        const raw = localStorage.getItem(RECURRING_STORAGE_KEY);
+        if (!raw) return null;
+        return JSON.parse(raw);
+    } catch {
+        return null;
+    }
+}

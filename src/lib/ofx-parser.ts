@@ -95,7 +95,14 @@ function parseTransactions(content: string, accountId: string, accountType: OFXA
     const rawDate = extractTag(block, 'DTPOSTED');
     const amount = parseFloat(extractTag(block, 'TRNAMT'));
     const fitId = extractTag(block, 'FITID');
-    const memo = extractTag(block, 'MEMO');
+    const rawName = extractTag(block, 'NAME');
+    const rawMemo = extractTag(block, 'MEMO');
+    
+    let memo = rawName;
+    if (rawMemo && rawMemo !== rawName) {
+      memo = rawName ? `${rawName} - ${rawMemo}` : rawMemo;
+    }
+    memo = memo || 'Sem descrição';
 
     transactions.push({
       id: `${accountId}:${fitId}`,

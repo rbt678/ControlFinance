@@ -3,7 +3,8 @@
 import React, { createContext, useContext, useReducer, useCallback, useEffect, ReactNode } from 'react';
 import { ParsedOFX, OFXTransaction, parseOFX } from './ofx-parser';
 import { Category, DEFAULT_CATEGORIES, categorizeTransaction } from './categories';
-import { loadFromLocalStorage, addFileToStorage, removeFileFromStorage, clearLocalStorage, saveCategoriesToLocalStorage, loadCategoriesFromLocalStorage, saveDriveFolderToLocalStorage, loadDriveFolderFromLocalStorage } from './storage';
+import { loadFromLocalStorage, addFileToStorage, removeFileFromStorage, clearLocalStorage, saveCategoriesToLocalStorage, loadCategoriesFromLocalStorage, saveDriveFolderToLocalStorage, loadDriveFolderFromLocalStorage, saveRecurringToLocalStorage, loadRecurringFromLocalStorage } from './storage';
+import { RecurringExpense, refreshManualRecurring } from './recurring';
 
 export interface EnrichedTransaction extends OFXTransaction {
     categories: Category[];
@@ -43,13 +44,14 @@ interface FinanceState {
     duplicates: DuplicateInfo[];
     showDuplicateModal: boolean;
     pendingFile: { fileName: string; content: string } | null;
-    activeTab: 'dashboard' | 'transactions' | 'raw' | 'settings';
+    activeTab: 'dashboard' | 'transactions' | 'recurring' | 'raw' | 'settings';
     isLoading: boolean;
     categories: Category[];
     googleDriveFolder: { id: string, name: string } | null;
     syncStatus: SyncStatus;
     lastSyncAt: number | null;
     syncResult: SyncResult | null;
+    recurringExpenses: RecurringExpense[];
 }
 
 type Action =
@@ -71,7 +73,11 @@ type Action =
     | { type: 'SET_GOOGLE_DRIVE_FOLDER'; payload: { id: string, name: string } | null }
     | { type: 'SET_SYNC_STATUS'; payload: SyncStatus }
     | { type: 'SET_LAST_SYNC_AT'; payload: number }
-    | { type: 'SET_SYNC_RESULT'; payload: SyncResult | null };
+    | { type: 'SET_SYNC_RESULT'; payload: SyncResult | null }
+    | { type: 'SET_RECURRING'; payload: RecurringExpense[] }
+    | { type: 'ADD_MANUAL_RECURRING'; payload: RecurringExpense }
+    | { type: 'UPDATE_RECURRING'; payload: RecurringExpense }
+    | { type: 'DELETE_RECURRING'; payload: string };
 
 const defaultFilters: Filters = {
     dateStart: '',
@@ -99,6 +105,7 @@ const initialState: FinanceState = {
     syncStatus: 'idle',
     lastSyncAt: null,
     syncResult: null,
+    recurringExpenses: [],
 };
 
 function reducer(state: FinanceState, action: Action): FinanceState {
@@ -151,6 +158,22 @@ function reducer(state: FinanceState, action: Action): FinanceState {
             return { ...state, lastSyncAt: action.payload };
         case 'SET_SYNC_RESULT':
             return { ...state, syncResult: action.payload };
+        case 'SET_RECURRING':
+            return { ...state, recurringExpenses: action.payload };
+        case 'ADD_MANUAL_RECURRING': {
+            const newList = [...state.recurringExpenses, action.payload];
+            const merged = refreshManualRecurring(newList, state.transactions);
+            return { ...state, recurringExpenses: merged };
+        }
+        case 'UPDATE_RECURRING': {
+            const updated = state.recurringExpenses.map(e =>
+                e.id === action.payload.id ? action.payload : e
+            );
+            const merged = refreshManualRecurring(updated, state.transactions);
+            return { ...state, recurringExpenses: merged };
+        }
+        case 'DELETE_RECURRING':
+            return { ...state, recurringExpenses: state.recurringExpenses.filter(e => e.id !== action.payload) };
         default:
             return state;
     }
@@ -203,6 +226,10 @@ interface FinanceContextType {
     resetCategories: () => void;
     setGoogleDriveFolder: (folder: { id: string, name: string } | null) => void;
     syncGoogleDrive: () => Promise<SyncResult | null>;
+    addManualRecurring: (expense: RecurringExpense) => void;
+    updateRecurring: (expense: RecurringExpense) => void;
+    deleteRecurring: (id: string) => void;
+    refreshRecurring: () => void;
 }
 
 const FinanceContext = createContext<FinanceContextType | null>(null);
@@ -220,6 +247,11 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
         const storedCats = loadCategoriesFromLocalStorage();
         if (storedCats && storedCats.length > 0) {
             dispatch({ type: 'SET_CATEGORIES', payload: storedCats });
+        }
+
+        const storedRecurring = loadRecurringFromLocalStorage();
+        if (storedRecurring && storedRecurring.length > 0) {
+            dispatch({ type: 'SET_RECURRING', payload: storedRecurring });
         }
 
         const stored = loadFromLocalStorage();
@@ -367,6 +399,24 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
         dispatch({ type: 'SET_GOOGLE_DRIVE_FOLDER', payload: folder });
     }, []);
 
+    const refreshRecurring = useCallback(() => {
+        const merged = refreshManualRecurring(state.recurringExpenses, state.transactions);
+        dispatch({ type: 'SET_RECURRING', payload: merged });
+        saveRecurringToLocalStorage(merged);
+    }, [state.transactions, state.recurringExpenses]);
+
+    const addManualRecurring = useCallback((expense: RecurringExpense) => {
+        dispatch({ type: 'ADD_MANUAL_RECURRING', payload: expense });
+    }, []);
+
+    const updateRecurring = useCallback((expense: RecurringExpense) => {
+        dispatch({ type: 'UPDATE_RECURRING', payload: expense });
+    }, []);
+
+    const deleteRecurring = useCallback((id: string) => {
+        dispatch({ type: 'DELETE_RECURRING', payload: id });
+    }, []);
+
     const syncGoogleDrive = useCallback(async (): Promise<SyncResult | null> => {
         if (!state.googleDriveFolder) return null;
         dispatch({ type: 'SET_LOADING', payload: true });
@@ -451,6 +501,22 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
         }
     }, [state.categories]);
 
+    // Persist recurring expenses whenever they change
+    useEffect(() => {
+        if (state.recurringExpenses.length > 0) {
+            saveRecurringToLocalStorage(state.recurringExpenses);
+        }
+    }, [state.recurringExpenses]);
+
+    // Auto-refresh recurring detection when transactions change
+    useEffect(() => {
+        if (state.transactions.length > 0) {
+            const merged = refreshManualRecurring(state.recurringExpenses, state.transactions);
+            dispatch({ type: 'SET_RECURRING', payload: merged });
+        }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [state.transactions]);
+
     const filteredTransactions = React.useMemo(() => {
         let result = state.transactions;
         const { dateStart, dateEnd, categories, categoryMatchMode, types, accounts, amountMin, amountMax, search } = state.filters;
@@ -509,7 +575,11 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
         resetCategories,
         setGoogleDriveFolder,
         syncGoogleDrive,
-    }), [state, addFile, removeFile, confirmDuplicates, setFilters, resetFilters, setActiveTab, filteredTransactions, loadFolderFiles, clearAll, addCategory, updateCategory, deleteCategory, resetCategories, setGoogleDriveFolder, syncGoogleDrive]);
+        addManualRecurring,
+        updateRecurring,
+        deleteRecurring,
+        refreshRecurring,
+    }), [state, addFile, removeFile, confirmDuplicates, setFilters, resetFilters, setActiveTab, filteredTransactions, loadFolderFiles, clearAll, addCategory, updateCategory, deleteCategory, resetCategories, setGoogleDriveFolder, syncGoogleDrive, addManualRecurring, updateRecurring, deleteRecurring, refreshRecurring]);
 
     return (
         <FinanceContext.Provider value={contextValue}>

@@ -15,31 +15,82 @@ import TopMerchantsChart from '@/components/TopMerchantsChart';
 import RawDataViewer from '@/components/RawDataViewer';
 import SettingsTab from '@/components/SettingsTab';
 import IntegrationsSection from '@/components/IntegrationsSection';
+import RecurringTab from '@/components/RecurringTab';
 import { motion, AnimatePresence } from 'framer-motion';
 
 function Dashboard() {
   const { state, setActiveTab } = useFinance();
 
-  const tabs = ['dashboard', 'transactions', 'raw', 'settings'] as const;
+  const tabs = ['dashboard', 'transactions', 'recurring', 'raw', 'settings'] as const;
   const [touchStartX, setTouchStartX] = useState<number | null>(null);
+  const [touchStartY, setTouchStartY] = useState<number | null>(null);
   const [touchEndX, setTouchEndX] = useState<number | null>(null);
+  const [touchEndY, setTouchEndY] = useState<number | null>(null);
 
-  const minSwipeDistance = 50;
+  const minSwipeDistance = 120;
+
+  // Reset touch state
+  const resetTouch = () => {
+    setTouchStartX(null);
+    setTouchStartY(null);
+    setTouchEndX(null);
+    setTouchEndY(null);
+  };
 
   const onTouchStart = (e: React.TouchEvent) => {
-    setTouchEndX(null);
+    let target = e.target as HTMLElement | null;
+    let isScrollableX = false;
+
+    // Check if the touch originated in a horizontally scrollable element
+    while (target && target !== e.currentTarget) {
+      if (target.scrollWidth > target.clientWidth) {
+        const style = window.getComputedStyle(target);
+        if (
+          style.overflowX === 'auto' ||
+          style.overflowX === 'scroll' ||
+          style.overflow === 'auto' ||
+          style.overflow === 'scroll'
+        ) {
+          isScrollableX = true;
+          break;
+        }
+      }
+      target = target.parentElement;
+    }
+
+    if (isScrollableX) {
+      resetTouch();
+      return;
+    }
+
+    resetTouch();
     setTouchStartX(e.targetTouches[0].clientX);
+    setTouchStartY(e.targetTouches[0].clientY);
   };
 
   const onTouchMove = (e: React.TouchEvent) => {
+    if (touchStartX === null) return;
     setTouchEndX(e.targetTouches[0].clientX);
+    setTouchEndY(e.targetTouches[0].clientY);
   };
 
   const onTouchEnd = () => {
-    if (touchStartX === null || touchEndX === null) return;
-    const distance = touchStartX - touchEndX;
-    const isLeftSwipe = distance > minSwipeDistance;
-    const isRightSwipe = distance < -minSwipeDistance;
+    if (touchStartX === null || touchEndX === null || touchStartY === null || touchEndY === null) {
+      resetTouch();
+      return;
+    }
+    
+    const distanceX = touchStartX - touchEndX;
+    const distanceY = touchStartY - touchEndY;
+    
+    // Ignore swipe if the primary movement was vertical
+    if (Math.abs(distanceY) > Math.abs(distanceX)) {
+      resetTouch();
+      return;
+    }
+
+    const isLeftSwipe = distanceX > minSwipeDistance;
+    const isRightSwipe = distanceX < -minSwipeDistance;
 
     if (isLeftSwipe || isRightSwipe) {
       const currentIndex = tabs.indexOf(state.activeTab as typeof tabs[number]);
@@ -50,7 +101,19 @@ function Dashboard() {
         setActiveTab(tabs[currentIndex - 1]);
       }
     }
+    resetTouch();
   };
+
+  // Calculate dynamic offset for visual feedback
+  let dragOffset = 0;
+  if (touchStartX !== null && touchEndX !== null && touchStartY !== null && touchEndY !== null) {
+    const distanceX = touchStartX - touchEndX;
+    const distanceY = touchStartY - touchEndY;
+    if (Math.abs(distanceX) > Math.abs(distanceY)) {
+      // 0.4 damping factor relative to finger movement
+      dragOffset = -(distanceX * 0.4);
+    }
+  }
 
   return (
     <div className="app">
@@ -64,7 +127,12 @@ function Dashboard() {
         onTouchEnd={onTouchEnd}
       >
         {state.parsedFiles.length > 0 && (
-          <AnimatePresence mode="wait">
+          <motion.div
+            animate={{ x: dragOffset }}
+            transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+            style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}
+          >
+            <AnimatePresence mode="wait">
             {state.activeTab === 'dashboard' && (
               <motion.div
                 key="dashboard"
@@ -101,6 +169,19 @@ function Dashboard() {
               </motion.div>
             )}
 
+            {state.activeTab === 'recurring' && (
+              <motion.div
+                key="recurring"
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 20 }}
+                transition={{ duration: 0.3 }}
+                className="recurring-view"
+              >
+                <RecurringTab />
+              </motion.div>
+            )}
+
             {state.activeTab === 'raw' && (
               <motion.div
                 key="raw"
@@ -127,6 +208,7 @@ function Dashboard() {
               </motion.div>
             )}
           </AnimatePresence>
+        </motion.div>
         )}
 
         {state.parsedFiles.length === 0 && (
