@@ -3,7 +3,7 @@
 import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useFinance } from '@/lib/store';
-import { RecurringExpense, detectVariation, groupOccurrencesByMonth } from '@/lib/recurring';
+import { RecurringExpense, RecurringOccurrence, detectVariation, groupOccurrencesByMonth } from '@/lib/recurring';
 import RecurringModal from './RecurringModal';
 
 // ─── Formatters ──────────────────────────────────────────────────────────────
@@ -17,34 +17,61 @@ const fmtMonth = (m: string) => {
   return `${months[parseInt(mo) - 1]}/${y.slice(2)}`;
 };
 
+const fmtWeekday = (d: string) => {
+  const [y, m, day] = d.split('-').map(Number);
+  const date = new Date(y, m - 1, day);
+  return date.toLocaleDateString('pt-BR', { weekday: 'short' }).replace('.', '').toUpperCase();
+};
+
 // ─── Sparkline ────────────────────────────────────────────────────────────────
 
-function Sparkline({ values, color = 'var(--accent)' }: { values: number[]; color?: string }) {
-  if (values.length < 2) return <span style={{ color: 'var(--text-muted)', fontSize: '0.7rem' }}>—</span>;
+function Sparkline({ values, color = 'var(--color-accent)' }: { values: number[]; color?: string }) {
+  if (values.length < 2) return <span style={{ color: 'var(--color-text-muted)', fontSize: '0.6rem', fontFamily: 'var(--font-mono)', opacity: 0.5 }}>NO_SIGNAL</span>;
 
   const w = 80;
   const h = 28;
+  const py = 6; // slightly more padding for clarity
   const min = Math.min(...values);
   const max = Math.max(...values);
-  const range = max - min || 1;
+  const hasRange = max > min;
+  const range = hasRange ? (max - min) : 1;
 
   const pts = values.map((v, i) => {
     const x = (i / (values.length - 1)) * w;
-    const y = h - ((v - min) / range) * h;
-    return `${x},${y}`;
+    const y = hasRange 
+      ? py + (h - 2 * py) * (1 - (v - min) / range)
+      : h / 2;
+    return { x, y };
   });
 
+  const pointsStr = pts.map(p => `${p.x},${p.y}`).join(' ');
+  const areaStr = `M 0,${h} ${pts.map(p => `L ${p.x},${p.y}`).join(' ')} L ${w},${h} Z`;
+
   return (
-    <svg width={w} height={h} style={{ display: 'block', overflow: 'visible' }}>
+    <svg width={w} height={h} style={{ display: 'block', overflow: 'visible', filter: 'drop-shadow(0 0 2px rgba(0,0,0,0.5))' }}>
+      {/* Horizontal Baseline */}
+      <line x1="0" y1={h / 2} x2={w} y2={h / 2} stroke="var(--color-border)" strokeWidth="0.5" strokeDasharray="3,3" />
+      
+      {/* Signal Area */}
+      <path d={areaStr} fill={color} fillOpacity="0.15" />
+      
+      {/* Signal Line */}
       <polyline
-        points={pts.join(' ')}
+        points={pointsStr}
         fill="none"
         stroke={color}
-        strokeWidth="1.5"
+        strokeWidth="2.5"
         strokeLinecap="round"
         strokeLinejoin="round"
       />
-      <circle cx={pts[pts.length - 1].split(',')[0]} cy={pts[pts.length - 1].split(',')[1]} r="2.5" fill={color} />
+      
+      {/* Terminal Point */}
+      <circle 
+        cx={pts[pts.length - 1].x} 
+        cy={pts[pts.length - 1].y} 
+        r="3" 
+        fill={color} 
+      />
     </svg>
   );
 }
@@ -72,10 +99,40 @@ function MonthPills({ occurrences, allMonths }: { occurrences: RecurringExpense[
 
 function ConfirmedRow({ expense, onDelete, onEdit }: { expense: RecurringExpense; onDelete: () => void; onEdit?: () => void }) {
   const [expanded, setExpanded] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [expandedMonths, setExpandedMonths] = useState<string[]>([]);
+  const now = new Date();
+  const currentMonthKey = `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}`;
+
   const grouped = useMemo(() => groupOccurrencesByMonth(expense.occurrences), [expense.occurrences]);
+
+  const occurrencesByMonth = useMemo(() => {
+    const groups: Record<string, { month: string; occurrences: RecurringOccurrence[]; total: number; isCurrent: boolean }> = {};
+    for (const o of expense.occurrences) {
+      if (!groups[o.month]) {
+        groups[o.month] = { 
+          month: o.month, 
+          occurrences: [], 
+          total: 0,
+          isCurrent: o.month === currentMonthKey
+        };
+      }
+      groups[o.month].occurrences.push(o);
+      groups[o.month].total += o.amount;
+    }
+    return Object.values(groups).sort((a, b) => b.month.localeCompare(a.month));
+  }, [expense.occurrences, currentMonthKey]);
+
   const values = grouped.map(o => o.amount);
   const variation = detectVariation(expense);
   const isManual = expense.status === 'manual';
+
+  const toggleMonth = (m: string) => {
+    setExpandedMonths(curr => curr.includes(m) ? curr.filter(x => x !== m) : [...curr, m]);
+  };
+
+  const expandAll = () => setExpandedMonths(occurrencesByMonth.map(g => g.month));
+  const collapseAll = () => setExpandedMonths([]);
 
   return (
     <motion.div
@@ -103,7 +160,7 @@ function ConfirmedRow({ expense, onDelete, onEdit }: { expense: RecurringExpense
           )}
         </div>
         <div className="recurring-row-right">
-          <Sparkline values={values} color={variation.hasVariation && variation.direction === 'up' ? 'var(--danger)' : 'var(--accent)'} />
+          <Sparkline values={values} color={variation.hasVariation && variation.direction === 'up' ? 'var(--color-danger)' : 'var(--color-accent)'} />
           <span className="recurring-row-amount">{fmt(expense.averageAmount)}</span>
           <span className="recurring-row-chevron">{expanded ? '▲' : '▼'}</span>
         </div>
@@ -118,41 +175,110 @@ function ConfirmedRow({ expense, onDelete, onEdit }: { expense: RecurringExpense
             exit={{ opacity: 0, height: 0 }}
             transition={{ duration: 0.2 }}
           >
+            <div className="recurring-command-bar">
+              <button className="cmd-btn edit" onClick={onEdit}>
+                <span className="cmd-icon">✎</span> [EDITAR_REGRA]
+              </button>
+              {isDeleting ? (
+                <div className="cmd-delete-confirm">
+                  <button className="cmd-btn confirm" onClick={onDelete}>
+                    CONFIRMAR_EXCLUSÃO
+                  </button>
+                  <button className="cmd-btn cancel" onClick={() => setIsDeleting(false)}>
+                    CANCELAR
+                  </button>
+                </div>
+              ) : (
+                <button className="cmd-btn delete" onClick={() => setIsDeleting(true)}>
+                  <span className="cmd-icon">🗑</span> [EXCLUIR_REGRA]
+                </button>
+              )}
+            </div>
+
             {expense.occurrences.length > 0 ? (
-              <div className="recurring-occurrence-list">
-                {[...expense.occurrences].sort((a, b) => b.month.localeCompare(a.month)).map((o, i) => (
-                  <div key={`${o.month}-${i}`} className="recurring-occurrence-item">
-                    <span className="occ-month">{fmtMonth(o.month)}</span>
-                    <span className="occ-memo">{o.memo}</span>
-                    <span className="occ-amount">{fmt(o.amount)}</span>
+              <motion.div 
+                className="recurring-occurrence-list"
+                initial="hidden"
+                animate="visible"
+                variants={{
+                  hidden: { opacity: 0 },
+                  visible: { 
+                    opacity: 1,
+                    transition: { staggerChildren: 0.05 }
+                  }
+                }}
+              >
+                {occurrencesByMonth.length > 1 && (
+                  <div className="occ-batch-actions">
+                    <button 
+                      className="occ-batch-btn" 
+                      onClick={expandAll} 
+                      disabled={expandedMonths.length === occurrencesByMonth.length}
+                    >
+                      [+] EXPANDIR_TUDO
+                    </button>
+                    <button 
+                      className="occ-batch-btn" 
+                      onClick={collapseAll} 
+                      disabled={expandedMonths.length === 0}
+                    >
+                      [-] RECOLHER_TUDO
+                    </button>
                   </div>
-                ))}
-              </div>
+                )}
+
+                {occurrencesByMonth.map((group) => {
+                  const isMonthExpanded = expandedMonths.includes(group.month);
+                  return (
+                    <motion.div 
+                      key={group.month} 
+                      className={`occ-group ${group.isCurrent ? 'current' : ''}`}
+                      variants={{
+                        hidden: { opacity: 0, y: 10 },
+                        visible: { opacity: 1, y: 0 }
+                      }}
+                    >
+                      <button className="occ-group-header" onClick={() => toggleMonth(group.month)}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <span className={`occ-group-chevron ${isMonthExpanded ? 'expanded' : ''}`}>▼</span>
+                          <span className="occ-group-month">{fmtMonth(group.month)}</span>
+                          {group.isCurrent && <span className="occ-current-badge">MÊS ATUAL</span>}
+                        </div>
+                        <span className="occ-group-total">{fmt(group.total)}</span>
+                      </button>
+                      
+                      <AnimatePresence>
+                        {isMonthExpanded && (
+                          <motion.div 
+                            className="occ-item-container"
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: 'auto', opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            transition={{ duration: 0.2 }}
+                          >
+                            <div className="occ-signal-path" />
+                            {group.occurrences.sort((a, b) => b.date.localeCompare(a.date)).map((o, i) => (
+                              <div key={`${o.date}-${i}`} className="recurring-occurrence-item">
+                                 <div className="occ-item-left">
+                                   <span className="occ-day">{o.date.split('-')[2]}</span>
+                                   <span className="occ-weekday">{fmtWeekday(o.date)}</span>
+                                 </div>
+                                 <span className="occ-memo">{o.memo}</span>
+                                 <span className="occ-amount">{fmt(o.amount)}</span>
+                              </div>
+                            ))}
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </motion.div>
+                  );
+                })}
+              </motion.div>
             ) : (
               <p style={{ fontSize: '11px', color: 'var(--text-muted)', fontStyle: 'italic', padding: '0 12px 12px' }}>
                 Nenhuma ocorrência associada ainda.
               </p>
             )}
-            <div style={{ display: 'flex', gap: '8px', padding: '0 12px 12px' }}>
-              <button
-                style={{
-                  background: 'var(--color-bg-elevated)',
-                  border: '1px solid var(--color-border)',
-                  color: 'var(--color-text)',
-                  fontFamily: 'var(--font-mono)',
-                  fontSize: '11px',
-                  padding: '6px 12px',
-                  cursor: 'pointer',
-                  transition: 'all var(--transition-fast)'
-                }}
-                onClick={onEdit}
-              >
-                ✎ Editar Regra
-              </button>
-              <button className="recurring-delete-btn" onClick={onDelete}>
-                🗑 Remover
-              </button>
-            </div>
           </motion.div>
         )}
       </AnimatePresence>
@@ -353,10 +479,10 @@ export default function RecurringTab() {
                   <div className="variation-chart-row">
                     <Sparkline
                       values={values}
-                      color={variation.hasVariation && variation.direction === 'up' ? 'var(--danger)' : 'var(--accent)'}
+                      color={variation.hasVariation && variation.direction === 'up' ? 'var(--color-danger)' : 'var(--color-accent)'}
                     />
                     <div className="variation-months-list">
-                      {grouped.map((o, i) => (
+                      {[...grouped].reverse().map((o, i) => (
                         <span key={`${o.month}-${i}`} className="variation-month-item">
                           <span className="vm-label">
                             {fmtMonth(o.month)}

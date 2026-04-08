@@ -65,9 +65,10 @@ export default function RecurringModal({ isOpen, onClose, onConfirm, initialExpe
   const previewStats = useMemo(() => {
     if (matchedTransactions.length === 0) return null;
     const total = matchedTransactions.reduce((sum, t) => sum + Math.abs(t.amount), 0);
+    const uniqueMonths = new Set(matchedTransactions.map(t => t.date.slice(0, 7))).size;
     return {
       count: matchedTransactions.length,
-      avg: total / matchedTransactions.length,
+      avg: uniqueMonths > 0 ? total / uniqueMonths : 0,
       lastDate: matchedTransactions[0].date
     };
   }, [matchedTransactions]);

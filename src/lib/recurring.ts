@@ -52,8 +52,9 @@ export function refreshManualRecurring(
         });
 
         if (matched.length > 0) {
-          const amounts = matched.map(t => Math.abs(t.amount));
-          const averageAmount = amounts.reduce((a, b) => a + b, 0) / amounts.length;
+          const totalAmount = matched.reduce((sum, t) => sum + Math.abs(t.amount), 0);
+          const uniqueMonths = new Set(matched.map(t => t.date.slice(0, 7))).size;
+          const averageAmount = uniqueMonths > 0 ? totalAmount / uniqueMonths : 0;
 
           const occurrences: RecurringOccurrence[] = matched.map(t => ({
             month: t.date.slice(0, 7),
