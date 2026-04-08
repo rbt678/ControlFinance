@@ -2312,6 +2312,159 @@ body {
   color: var(--color-text-secondary);
 }
 
+/* Settings Sync - Industrial Sharp Redesign */
+.drive-settings-sync {
+  margin-top: var(--space-md);
+  padding: var(--space-md);
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid var(--color-border);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.drive-settings-sync::after {
+  content: "CF_PREF_SYNC_OVR";
+  position: absolute;
+  top: -7px;
+  right: 10px;
+  font-family: var(--font-mono);
+  font-size: 8px;
+  background: var(--color-bg);
+  padding: 0 4px;
+  color: var(--color-text-muted);
+}
+
+.drive-settings-sync-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  border-bottom: 1px solid var(--color-border);
+  padding-bottom: 8px;
+  margin-bottom: 4px;
+}
+
+.pref-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--color-accent);
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  font-weight: 700;
+}
+
+.pref-status-line {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--color-text-muted);
+  letter-spacing: 1px;
+}
+
+.drive-settings-sync-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-sm);
+}
+
+.drive-settings-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 8px;
+  border: 1px solid var(--color-border);
+  background: var(--color-bg);
+  color: var(--color-text-secondary);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  position: relative;
+  overflow: hidden;
+}
+
+.drive-settings-btn svg {
+  width: 18px;
+  height: 18px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 1.5;
+  flex-shrink: 0;
+  opacity: 0.7;
+}
+
+.drive-settings-btn:hover:not(:disabled) {
+  background: var(--color-bg-elevated);
+  border-color: var(--color-text-muted);
+  color: var(--color-text);
+}
+
+.drive-settings-btn.upload:hover:not(:disabled) {
+  border-left: 3px solid var(--color-accent);
+}
+
+.drive-settings-btn.download:hover:not(:disabled) {
+  border-left: 3px solid var(--color-success);
+}
+
+.drive-settings-btn span {
+  font-size: 9px;
+  opacity: 0.8;
+}
+
+.drive-settings-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  filter: grayscale(1);
+}
+
+.drive-settings-btn.syncing {
+  border-color: var(--color-accent);
+  background: rgba(255, 107, 44, 0.05);
+}
+
+.drive-settings-btn.syncing::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 1px;
+  background: var(--color-accent);
+  animation: scanline 2s linear infinite;
+}
+
+@keyframes scanline {
+  0% { transform: translateY(0); opacity: 0; }
+  50% { opacity: 1; }
+  100% { transform: translateY(40px); opacity: 0; }
+}
+
+.pref-meta-info {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 4px;
+}
+
+.last-sync-tag {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+}
+
 /* Select Folder Button (when no folder is selected) */
 .drive-select-folder-btn {
   display: flex;

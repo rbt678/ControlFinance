@@ -9,7 +9,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useState } from 'react';
 
 export default function IntegrationsSection() {
-    const { state, setGoogleDriveFolder, syncGoogleDrive } = useFinance();
+    const { state, setGoogleDriveFolder, syncGoogleDrive, syncSettings, uploadSettings } = useFinance();
     const [isSelectingDriveFolder, setIsSelectingDriveFolder] = useState(false);
     const { data: session, status } = useSession();
     const { addToast } = useToast();
@@ -54,6 +54,30 @@ export default function IntegrationsSection() {
     };
 
     const isSyncing = state.syncStatus === 'syncing';
+    const isSettingsSyncing = state.settingsSyncStatus === 'uploading' || state.settingsSyncStatus === 'downloading';
+
+    const handleUploadSettings = useCallback(async () => {
+        const result = await uploadSettings();
+        if (result.success) {
+            addToast('Preferências salvas no Drive.', 'success');
+        } else {
+            addToast(result.error || 'Falha ao enviar preferências.', 'error', 5000);
+        }
+    }, [uploadSettings, addToast]);
+
+    const handleDownloadSettings = useCallback(async () => {
+        const result = await syncSettings();
+        switch (result.action) {
+            case 'downloaded':
+                addToast('Preferências restauradas do Drive.', 'success');
+                break;
+            case 'uploaded':
+                addToast('Nenhuma preferência no Drive. Estado local enviado.', 'info');
+                break;
+            default:
+                addToast(result.error || 'Nenhuma ação realizada.', result.error ? 'error' : 'info', 5000);
+        }
+    }, [syncSettings, addToast]);
 
     return (
         <section className="settings-section integrations-section">
@@ -168,6 +192,67 @@ export default function IntegrationsSection() {
                                                 )}
                                             </div>
                                         )}
+                                    </div>
+
+                                    {/* Settings Sync Controls */}
+                                    <div className="drive-settings-sync">
+                                        <div className="drive-settings-sync-header">
+                                            <div className="pref-label">
+                                                <svg viewBox="0 0 24 24" className="meta-icon">
+                                                    <circle cx="12" cy="12" r="3" />
+                                                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
+                                                </svg>
+                                                SYNC PREFERÊNCIAS
+                                            </div>
+                                            <div className="pref-status-line">
+                                                {state.settingsSyncStatus === 'idle' ? '[ STANDBY ]' :
+                                                 state.settingsSyncStatus === 'uploading' ? '[ UPLOADING... ]' :
+                                                 state.settingsSyncStatus === 'downloading' ? '[ DOWNLOADING... ]' :
+                                                 '[ READY ]'}
+                                            </div>
+                                        </div>
+                                        <div className="drive-settings-sync-actions">
+                                            <button
+                                                onClick={handleUploadSettings}
+                                                disabled={isSettingsSyncing}
+                                                className={`drive-settings-btn upload ${isSettingsSyncing ? 'syncing' : ''}`}
+                                                title="Enviar preferências locais para o Drive"
+                                            >
+                                                <svg viewBox="0 0 24 24">
+                                                    <polyline points="17 1 21 5 17 9" />
+                                                    <path d="M3 11V9a4 4 0 0 1 4-4h14" />
+                                                    <polyline points="7 23 3 19 7 15" />
+                                                    <path d="M21 13v2a4 4 0 0 1-4 4H3" />
+                                                </svg>
+                                                <span>ENVIAR</span>
+                                                DRIVE
+                                            </button>
+                                            <button
+                                                onClick={handleDownloadSettings}
+                                                disabled={isSettingsSyncing}
+                                                className={`drive-settings-btn download ${isSettingsSyncing ? 'syncing' : ''}`}
+                                                title="Restaurar preferências do Drive"
+                                            >
+                                                <svg viewBox="0 0 24 24">
+                                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                                                    <polyline points="7 10 12 15 17 10" />
+                                                    <line x1="12" y1="15" x2="12" y2="3" />
+                                                </svg>
+                                                <span>RESTAURAR</span>
+                                                DRIVE
+                                            </button>
+                                        </div>
+                                        <div className="pref-meta-info">
+                                            {state.lastSettingsSyncAt && (
+                                                <div className="last-sync-tag">
+                                                    <svg viewBox="0 0 24 24" className="meta-icon">
+                                                        <circle cx="12" cy="12" r="10" />
+                                                        <polyline points="12 6 12 12 16 14" />
+                                                    </svg>
+                                                    ÚLTIMA SYNC: {formatLastSync(state.lastSettingsSyncAt).toUpperCase()}
+                                                </div>
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
                             ) : (

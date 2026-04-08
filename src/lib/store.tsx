@@ -30,11 +30,20 @@ export interface Filters {
 }
 
 export type SyncStatus = 'idle' | 'syncing' | 'success' | 'error';
+export type SettingsSyncStatus = 'idle' | 'uploading' | 'downloading' | 'success' | 'error';
 
 export interface SyncResult {
     added: number;
     found: number;
     errors: string[];
+}
+
+export interface DriveSettings {
+    version: number;
+    updatedAt: number;
+    categories: Category[];
+    recurringExpenses: RecurringExpense[];
+    driveFolder: { id: string; name: string } | null;
 }
 
 interface FinanceState {
@@ -52,6 +61,8 @@ interface FinanceState {
     lastSyncAt: number | null;
     syncResult: SyncResult | null;
     recurringExpenses: RecurringExpense[];
+    settingsSyncStatus: SettingsSyncStatus;
+    lastSettingsSyncAt: number | null;
 }
 
 type Action =
@@ -77,7 +88,9 @@ type Action =
     | { type: 'SET_RECURRING'; payload: RecurringExpense[] }
     | { type: 'ADD_MANUAL_RECURRING'; payload: RecurringExpense }
     | { type: 'UPDATE_RECURRING'; payload: RecurringExpense }
-    | { type: 'DELETE_RECURRING'; payload: string };
+    | { type: 'DELETE_RECURRING'; payload: string }
+    | { type: 'SET_SETTINGS_SYNC_STATUS'; payload: SettingsSyncStatus }
+    | { type: 'SET_LAST_SETTINGS_SYNC_AT'; payload: number };
 
 const defaultFilters: Filters = {
     dateStart: '',
@@ -106,6 +119,8 @@ const initialState: FinanceState = {
     lastSyncAt: null,
     syncResult: null,
     recurringExpenses: [],
+    settingsSyncStatus: 'idle',
+    lastSettingsSyncAt: null,
 };
 
 function reducer(state: FinanceState, action: Action): FinanceState {
@@ -174,6 +189,10 @@ function reducer(state: FinanceState, action: Action): FinanceState {
         }
         case 'DELETE_RECURRING':
             return { ...state, recurringExpenses: state.recurringExpenses.filter(e => e.id !== action.payload) };
+        case 'SET_SETTINGS_SYNC_STATUS':
+            return { ...state, settingsSyncStatus: action.payload };
+        case 'SET_LAST_SETTINGS_SYNC_AT':
+            return { ...state, lastSettingsSyncAt: action.payload };
         default:
             return state;
     }
@@ -230,6 +249,8 @@ interface FinanceContextType {
     updateRecurring: (expense: RecurringExpense) => void;
     deleteRecurring: (id: string) => void;
     refreshRecurring: () => void;
+    syncSettings: () => Promise<{ action: 'uploaded' | 'downloaded' | 'merged' | 'none'; error?: string }>;
+    uploadSettings: () => Promise<{ success: boolean; error?: string }>;
 }
 
 const FinanceContext = createContext<FinanceContextType | null>(null);
@@ -417,6 +438,84 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
         dispatch({ type: 'DELETE_RECURRING', payload: id });
     }, []);
 
+    const buildSettingsPayload = useCallback((): DriveSettings => ({
+        version: 1,
+        updatedAt: Date.now(),
+        categories: state.categories,
+        recurringExpenses: state.recurringExpenses,
+        driveFolder: state.googleDriveFolder,
+    }), [state.categories, state.recurringExpenses, state.googleDriveFolder]);
+
+    const uploadSettings = useCallback(async (): Promise<{ success: boolean; error?: string }> => {
+        if (!state.googleDriveFolder) return { success: false, error: 'Nenhuma pasta selecionada' };
+
+        dispatch({ type: 'SET_SETTINGS_SYNC_STATUS', payload: 'uploading' });
+        try {
+            const settings = buildSettingsPayload();
+            const res = await fetch('/api/drive/settings', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ folderId: state.googleDriveFolder.id, settings }),
+            });
+
+            if (!res.ok) {
+                const data = await res.json().catch(() => ({}));
+                throw new Error(data.error || `HTTP ${res.status}`);
+            }
+
+            dispatch({ type: 'SET_SETTINGS_SYNC_STATUS', payload: 'success' });
+            dispatch({ type: 'SET_LAST_SETTINGS_SYNC_AT', payload: Date.now() });
+            return { success: true };
+        } catch (e) {
+            console.error('Failed to upload settings:', e);
+            dispatch({ type: 'SET_SETTINGS_SYNC_STATUS', payload: 'error' });
+            return { success: false, error: e instanceof Error ? e.message : 'Erro desconhecido' };
+        }
+    }, [state.googleDriveFolder, buildSettingsPayload]);
+
+    const syncSettings = useCallback(async (): Promise<{ action: 'uploaded' | 'downloaded' | 'merged' | 'none'; error?: string }> => {
+        if (!state.googleDriveFolder) return { action: 'none', error: 'Nenhuma pasta selecionada' };
+
+        dispatch({ type: 'SET_SETTINGS_SYNC_STATUS', payload: 'downloading' });
+        try {
+            const res = await fetch(`/api/drive/settings?folderId=${encodeURIComponent(state.googleDriveFolder.id)}`);
+            if (!res.ok) {
+                const data = await res.json().catch(() => ({}));
+                throw new Error(data.error || `HTTP ${res.status}`);
+            }
+
+            const { settings: remote } = await res.json() as { settings: DriveSettings | null };
+
+            if (!remote) {
+                // No settings on Drive yet — upload current local state
+                const uploadResult = await uploadSettings();
+                return uploadResult.success
+                    ? { action: 'uploaded' }
+                    : { action: 'none', error: uploadResult.error };
+            }
+
+            // Merge: Drive settings are applied (downloaded) since user triggered sync
+            // This is a "pull from Drive" operation
+            if (remote.categories && remote.categories.length > 0) {
+                dispatch({ type: 'SET_CATEGORIES', payload: remote.categories });
+                saveCategoriesToLocalStorage(remote.categories);
+            }
+            if (remote.recurringExpenses && remote.recurringExpenses.length > 0) {
+                dispatch({ type: 'SET_RECURRING', payload: remote.recurringExpenses });
+                saveRecurringToLocalStorage(remote.recurringExpenses);
+            }
+
+            dispatch({ type: 'SET_SETTINGS_SYNC_STATUS', payload: 'success' });
+            dispatch({ type: 'SET_LAST_SETTINGS_SYNC_AT', payload: Date.now() });
+            return { action: 'downloaded' };
+
+        } catch (e) {
+            console.error('Failed to sync settings:', e);
+            dispatch({ type: 'SET_SETTINGS_SYNC_STATUS', payload: 'error' });
+            return { action: 'none', error: e instanceof Error ? e.message : 'Erro desconhecido' };
+        }
+    }, [state.googleDriveFolder, uploadSettings]);
+
     const syncGoogleDrive = useCallback(async (): Promise<SyncResult | null> => {
         if (!state.googleDriveFolder) return null;
         dispatch({ type: 'SET_LOADING', payload: true });
@@ -579,7 +678,9 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
         updateRecurring,
         deleteRecurring,
         refreshRecurring,
-    }), [state, addFile, removeFile, confirmDuplicates, setFilters, resetFilters, setActiveTab, filteredTransactions, loadFolderFiles, clearAll, addCategory, updateCategory, deleteCategory, resetCategories, setGoogleDriveFolder, syncGoogleDrive, addManualRecurring, updateRecurring, deleteRecurring, refreshRecurring]);
+        syncSettings,
+        uploadSettings,
+    }), [state, addFile, removeFile, confirmDuplicates, setFilters, resetFilters, setActiveTab, filteredTransactions, loadFolderFiles, clearAll, addCategory, updateCategory, deleteCategory, resetCategories, setGoogleDriveFolder, syncGoogleDrive, addManualRecurring, updateRecurring, deleteRecurring, refreshRecurring, syncSettings, uploadSettings]);
 
     return (
         <FinanceContext.Provider value={contextValue}>
